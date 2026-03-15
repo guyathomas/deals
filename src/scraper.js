@@ -1,5 +1,4 @@
-const pw = require('playwright');
-const cheerio = require('cheerio');
+const pw = require('playwright-core');
 const { sites } = require('../config/sites');
 
 const MAX_RETRIES = 2;
@@ -95,6 +94,12 @@ async function loadMorePages(page, siteConfig) {
 
 // --- Bright Data Scraping Browser ---
 
+function sanitizeError(err) {
+  const sanitized = new Error(err.message.replace(/wss:\/\/[^@]+@/, 'wss://***@'));
+  sanitized.stack = err.stack?.replace(/wss:\/\/[^@]+@/g, 'wss://***@');
+  return sanitized;
+}
+
 function connectScrapingBrowser() {
   const auth = process.env.BRIGHT_DATA_AUTH;
   if (!auth) {
@@ -104,55 +109,70 @@ function connectScrapingBrowser() {
   return pw.chromium.connectOverCDP(cdpUrl);
 }
 
+async function getPage(browser) {
+  const contexts = browser.contexts();
+  if (contexts.length > 0 && contexts[0].pages().length > 0) {
+    return contexts[0].pages()[0];
+  }
+  return browser.newPage();
+}
+
 async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
   let lastError;
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    if (attempt > 0) {
-      console.log(`  Retry ${attempt}/${MAX_RETRIES} for ${siteConfig.key}...`);
-      await sleep(RETRY_DELAY_MS * attempt);
-    }
+  let browser;
+  try {
+    browser = await connectScrapingBrowser();
+  } catch (err) {
+    throw sanitizeError(err);
+  }
 
-    let browser;
-    try {
-      browser = await connectScrapingBrowser();
-      const page = browser.contexts()[0].pages()[0];
+  try {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        console.log(`  Retry ${attempt}/${MAX_RETRIES} for ${siteConfig.key}...`);
+        await sleep(RETRY_DELAY_MS * attempt);
+      }
 
-      validateNavigationUrl(siteConfig.url);
-      await page.goto(siteConfig.url, {
-        waitUntil: 'domcontentloaded',
-        timeout: CDP_TIMEOUT,
-      });
+      try {
+        const page = await getPage(browser);
 
-      if (siteConfig.waitFor) {
-        await page.waitForSelector(siteConfig.waitFor, {
+        validateNavigationUrl(siteConfig.url);
+        await page.goto(siteConfig.url, {
+          waitUntil: 'domcontentloaded',
           timeout: CDP_TIMEOUT,
         });
-      } else {
-        await sleep(10000);
+
+        if (siteConfig.waitFor) {
+          await page.waitForSelector(siteConfig.waitFor, {
+            timeout: CDP_TIMEOUT,
+          });
+        } else {
+          await sleep(10000);
+        }
+
+        if (siteConfig.scrollToBottom) {
+          await autoScroll(page);
+        }
+
+        await loadMorePages(page, siteConfig);
+
+        const rawProducts = await extractProducts(page, siteConfig);
+        const products = normalizeProducts(rawProducts, siteConfig.url);
+
+        console.log(`  ${siteConfig.key}: ${products.length} products found`);
+        return products;
+      } catch (err) {
+        lastError = sanitizeError(err);
+        console.error(`  ${siteConfig.key} attempt ${attempt}: ${lastError.message}`);
       }
-
-      if (siteConfig.scrollToBottom) {
-        await autoScroll(page);
-      }
-
-      await loadMorePages(page, siteConfig);
-
-      const rawProducts = await extractProducts(page, siteConfig);
-      const products = normalizeProducts(rawProducts, siteConfig.url);
-
-      console.log(`  ${siteConfig.key}: ${products.length} products found`);
-      return products;
-    } catch (err) {
-      lastError = err;
-      console.error(`  ${siteConfig.key} attempt ${attempt}: ${err.message}`);
-    } finally {
-      if (browser) await browser.close();
     }
+  } finally {
+    await browser.close();
   }
 
   console.error(`  ${siteConfig.key}: FAILED after ${MAX_RETRIES + 1} attempts`);
   throw lastError;
 }
 
-module.exports = { scrapeSite, autoScroll, validateNavigationUrl, ALLOWED_HOSTS };
+module.exports = { scrapeSite, validateNavigationUrl, ALLOWED_HOSTS };

@@ -3,7 +3,7 @@ const { saveSnapshot, getPreviousSnapshot, saveChanges, getSiteParams } = requir
 const { extractProducts, normalizeProducts } = require('./parser');
 const { diffSnapshots } = require('./differ');
 const { scrapeSite } = require('./scraper');
-const { buildEffectiveUrl } = require('./server');
+const { buildEffectiveUrl } = require('./url-utils');
 
 async function runScrape(db, { siteKey } = {}) {
   let targetSites;

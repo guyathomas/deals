@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { validateParams, buildEffectiveUrl } = require('../src/server');
+const { validateParams, buildEffectiveUrl } = require('../src/url-utils');
 
 describe('validateParams', () => {
   it('accepts valid query strings', () => {
