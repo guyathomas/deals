@@ -1,7 +1,5 @@
 FROM node:20-slim
 
-RUN npx playwright install --with-deps chromium
-
 WORKDIR /app
 
 COPY package*.json ./

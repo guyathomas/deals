@@ -74,7 +74,6 @@ const sites = [
     key: 'gilt',
     name: 'Gilt',
     url: 'https://www.gilt.com/boutique/236279?dsi=BTQ-385225864--3566f608-d878-4053-92d8-91272842137a&lsi=26cc0de0-0700-492f-932a-1dca74b2c327&queryID=bfe017ec228eb0bcb31f37bebd575175&page=1&size=Men___Activewear+%26+Loungewear___Medium%7CMen___Casual+Button+Downs___Medium%7CMen___Outerwear___Medium%7CMen___Pants___34%7CMen___Pants___33%7CMen___Shorts___Medium%7CMen___Sportcoats+%26+Blazers___42%7CMen___Suits+%26+Tuxedos___42%7CMen___Sweaters___Medium%7CMen___Sweatshirts+%26+Hoodies___Medium%7CMen___Swimwear___Medium%7CMen___T-Shirts+%26+Polos___Medium&hideSoldOut=true',
-    proxy: 'browserbase',
     selectors: {
       product: '.product-tile',
       name: 'h3',
@@ -117,7 +116,6 @@ const sites = [
     key: 'saks',
     name: 'Saks Fifth Avenue',
     url: 'https://www.saksfifthavenue.com/c/men/sale?prefn1=sizeRefinement&prefv1=11%7C44%7CMedium',
-    proxy: 'browserbase',
     loadMore: '.show-more .btn',
     maxPages: 5,
     selectors: {
@@ -136,7 +134,6 @@ const sites = [
     key: 'ralph-lauren',
     name: 'Ralph Lauren',
     url: 'https://www.ralphlauren.com/sale-new-to-sale-men-cg?prefn1=websize&prefv1=11%7CM',
-    proxy: 'browserbase',
     selectors: {
       product: '.product-tile',
       name: '.product-tile-name',

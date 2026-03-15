@@ -15,7 +15,7 @@ primary_region = "ewr"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"
+  memory = "256mb"
 
 [mounts]
   source = "deals_data"
