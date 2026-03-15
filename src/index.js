@@ -4,7 +4,6 @@ const path = require('path');
 try { process.loadEnvFile(path.join(__dirname, '..', '.env')); } catch {}
 
 const { Command } = require('commander');
-const { sites } = require('../config/sites');
 const { createDb, getChanges } = require('./db');
 const { createServer } = require('./server');
 const { runScrape } = require('./scrape-runner');
@@ -20,29 +19,10 @@ program
   .command('scrape')
   .description('Scrape one or all configured sites')
   .option('-s, --site <key>', 'Scrape a specific site')
-  .option('--captcha', 'Only scrape sites that require captcha solving (browserbase)')
-  .option('--basic', 'Only scrape sites that do not require captcha solving')
   .action(async (opts) => {
     const db = createDb();
     try {
-      let siteKey;
-      if (opts.site) {
-        siteKey = opts.site;
-      } else if (opts.captcha) {
-        // Filter handled inside runScrape would be complex, so handle here
-        const filtered = sites.filter((s) => s.proxy === 'browserbase');
-        for (const s of filtered) {
-          await runScrape(db, { siteKey: s.key });
-        }
-        return;
-      } else if (opts.basic) {
-        const filtered = sites.filter((s) => !s.proxy);
-        for (const s of filtered) {
-          await runScrape(db, { siteKey: s.key });
-        }
-        return;
-      }
-      await runScrape(db, { siteKey });
+      await runScrape(db, { siteKey: opts.site });
     } finally {
       db.close();
     }
