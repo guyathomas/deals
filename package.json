@@ -1,0 +1,30 @@
+{
+  "name": "deals",
+  "version": "1.0.0",
+  "description": "Retail deal price monitor",
+  "license": "ISC",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "bin": {
+    "deals": "src/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "scrape": "node src/index.js scrape",
+    "serve": "node src/index.js serve",
+    "history": "node src/index.js history"
+  },
+  "dependencies": {
+    "@browserbasehq/sdk": "^2.7.0",
+    "better-sqlite3": "^11.0.0",
+    "cheerio": "^1.2.0",
+    "commander": "^12.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.0",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "playwright": "^1.58.2",
+    "playwright-extra": "^4.3.0",
+    "puppeteer-extra-plugin-stealth": "^2.11.0"
+  }
+}
