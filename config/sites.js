@@ -131,6 +131,23 @@ const sites = [
     timeout: 120000,
   }),
   defineSite({
+    key: 'mr-porter',
+    name: 'Mr Porter',
+    url: 'https://www.mrporter.com/en-us/mens/sale?facet=ads_f10005_ntk_cs%253A%2522M%2522',
+    selectors: {
+      product: '.ProductItem26',
+      brand: '.ProductItem26__designer',
+      name: '.ProductItem26__name',
+      originalPrice: '.PriceWithSchema11__previousPrice',
+      salePrice: '.PriceWithSchema11__value',
+      url: 'a[href*="/product/"]',
+      image: 'img.Image18__image',
+    },
+    waitFor: '.ProductGrid53',
+    timeout: 60000,
+    useProxy: true,
+  }),
+  defineSite({
     key: 'ralph-lauren',
     name: 'Ralph Lauren',
     url: 'https://www.ralphlauren.com/sale-new-to-sale-men-cg?prefn1=websize&prefv1=11%7CM',

@@ -42,7 +42,7 @@ function extractProducts(page, siteConfig) {
       const brand = brandEl ? brandEl.textContent.trim() : null;
       const name = brand ? `${brand} - ${rawName}` : rawName;
 
-      const linkEl = el.querySelector(selectors.url);
+      const linkEl = el.querySelector(selectors.url) || el.closest(selectors.url);
       const href = linkEl ? linkEl.getAttribute('href') : null;
 
       const imgEl = el.querySelector(selectors.image);

@@ -109,6 +109,13 @@ function connectScrapingBrowser() {
   return pw.chromium.connectOverCDP(cdpUrl);
 }
 
+function launchLocalBrowser() {
+  return pw.chromium.launch({
+    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    headless: true,
+  });
+}
+
 async function getPage(browser) {
   const contexts = browser.contexts();
   if (contexts.length > 0 && contexts[0].pages().length > 0) {
@@ -120,9 +127,10 @@ async function getPage(browser) {
 async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
   let lastError;
 
+  const useProxy = siteConfig.useProxy === true;
   let browser;
   try {
-    browser = await connectScrapingBrowser();
+    browser = useProxy ? await launchLocalBrowser() : await connectScrapingBrowser();
   } catch (err) {
     throw sanitizeError(err);
   }
@@ -135,7 +143,9 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
       }
 
       try {
-        const page = await getPage(browser);
+        const page = useProxy
+          ? await browser.newPage()
+          : await getPage(browser);
 
         validateNavigationUrl(siteConfig.url);
         await page.goto(siteConfig.url, {
