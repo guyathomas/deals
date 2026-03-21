@@ -2,63 +2,27 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useHiddenItems from '../hooks/useHiddenItems';
 
-const cardGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-  gap: '1rem',
+const changeBadgeClass = {
+  new: 'badge-new',
+  price_drop: 'badge-drop',
+  price_increase: 'badge-increase',
 };
 
-const productCard = {
-  background: '#fff',
-  borderRadius: 8,
-  border: '1px solid #e0e0e0',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
+const changeBadgeLabel = {
+  new: 'New',
+  price_drop: 'Price Drop',
+  price_increase: 'Price Up',
 };
 
-const selectStyle = {
-  padding: '0.4rem',
-  borderRadius: 6,
-  border: '1px solid #d1d5db',
-};
-
-const changeBadgeColors = {
-  new: { bg: '#dcfce7', color: '#166534', label: 'New' },
-  price_drop: { bg: '#dbeafe', color: '#1e40af', label: 'Price Drop' },
-  price_increase: { bg: '#fee2e2', color: '#991b1b', label: 'Price Up' },
-};
-
-const urlBarStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  padding: '0.75rem',
-  background: '#f8fafc',
-  borderRadius: 8,
-  border: '1px solid #e2e8f0',
-  marginBottom: '1rem',
-  flexWrap: 'wrap',
-};
-
-const urlInputStyle = {
-  flex: 1,
-  minWidth: 200,
-  padding: '0.4rem 0.6rem',
-  borderRadius: 6,
-  border: '1px solid #d1d5db',
-  fontSize: '0.85rem',
-  fontFamily: 'monospace',
-};
-
-const urlBtnStyle = {
-  padding: '0.4rem 0.75rem',
-  borderRadius: 6,
-  border: '1px solid #d1d5db',
-  background: '#fff',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-};
+function Loading() {
+  return (
+    <div className="loading">
+      <span className="loading-dot" />
+      <span className="loading-dot" />
+      <span className="loading-dot" />
+    </div>
+  );
+}
 
 function getAdminToken() {
   return localStorage.getItem('deals_admin_token');
@@ -161,14 +125,10 @@ export default function SiteDetail() {
     }
   };
 
-  // Build a map of product name -> most recent change info
   const changeMap = new Map();
   for (const c of changes) {
     if (c.change_type === 'removed') continue;
-    const key = c.product_name;
-    if (!changeMap.has(key)) {
-      changeMap.set(key, c);
-    }
+    if (!changeMap.has(c.product_name)) changeMap.set(c.product_name, c);
   }
 
   const effectivePrice = (p) => p.sale_price ?? p.original_price ?? 0;
@@ -176,10 +136,10 @@ export default function SiteDetail() {
   const now = Date.now();
   const recencyMs = {
     all: 0,
-    '24h': 24 * 60 * 60 * 1000,
-    '3d': 3 * 24 * 60 * 60 * 1000,
-    '7d': 7 * 24 * 60 * 60 * 1000,
-    '30d': 30 * 24 * 60 * 60 * 1000,
+    '24h': 86400000,
+    '3d': 259200000,
+    '7d': 604800000,
+    '30d': 2592000000,
   };
 
   const itemKey = (p) => `${p.site_key || siteKey}:${p.url}`;
@@ -214,7 +174,6 @@ export default function SiteDetail() {
     }
   });
 
-  // Extract origin+path from base URL for display
   let baseDisplay = '';
   try {
     const parsed = new URL(baseUrl);
@@ -223,34 +182,34 @@ export default function SiteDetail() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <Link to="/" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '0.9rem' }}>Back</Link>
-        <h1 style={{ fontSize: '1.5rem' }}>{siteKey}</h1>
-        <span style={{ color: '#888', fontSize: '0.9rem' }}>
+      <div className="page-header">
+        <Link to="/" className="back-link">&larr; Back</Link>
+        <h1 className="page-title">{siteKey}</h1>
+        <span className="page-subtitle">
           {filtered.length}{filtered.length !== products.length ? ` / ${products.length}` : ''} products
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <select value={changeType} onChange={(e) => setChangeType(e.target.value)} style={selectStyle}>
+        <div className="page-actions">
+          <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select">
             <option value="all">All types</option>
             <option value="new">New</option>
             <option value="price_drop">Price Drops</option>
             <option value="price_increase">Price Increases</option>
           </select>
-          <select value={recency} onChange={(e) => setRecency(e.target.value)} style={selectStyle}>
-            <option value="all">All products</option>
-            <option value="24h">Changed in 24h</option>
-            <option value="3d">Changed in 3 days</option>
-            <option value="7d">Changed in 7 days</option>
-            <option value="30d">Changed in 30 days</option>
+          <select value={recency} onChange={(e) => setRecency(e.target.value)} className="select">
+            <option value="all">All time</option>
+            <option value="24h">Last 24h</option>
+            <option value="3d">Last 3 days</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
           </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selectStyle}>
-            <option value="discount">Highest Discount</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="recent">Most Recently Changed</option>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select">
+            <option value="discount">Biggest Discount</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="recent">Most Recent</option>
           </select>
           {hiddenCount > 0 && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <label className="hidden-toggle">
               <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
               Show hidden ({hiddenCount})
             </label>
@@ -258,49 +217,40 @@ export default function SiteDetail() {
         </div>
       </div>
 
-      <div style={urlBarStyle}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap' }}>Scrape URL</span>
-        <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }}>
-          {baseDisplay}
-        </span>
+      <div className="card url-bar">
+        <span className="url-bar-label">Scrape URL</span>
+        <span className="url-bar-base">{baseDisplay}</span>
         <input
           type="text"
           value={paramsValue}
           onChange={(e) => setParamsValue(e.target.value)}
           placeholder="?param=value"
-          style={urlInputStyle}
+          className="input input-mono url-bar-input"
         />
-        <button
-          onClick={saveParams}
-          disabled={urlSaving}
-          style={{ ...urlBtnStyle, background: '#2563eb', color: '#fff', borderColor: '#2563eb' }}
-        >
+        <button onClick={saveParams} disabled={urlSaving} className="btn btn-primary">
           Save
         </button>
         {isCustom && (
-          <button onClick={resetParams} disabled={urlSaving} style={urlBtnStyle}>
+          <button onClick={resetParams} disabled={urlSaving} className="btn btn-secondary">
             Reset
           </button>
         )}
-        {isCustom && (
-          <span style={{ fontSize: '0.75rem', color: '#d97706' }}>Custom Params</span>
-        )}
-        {urlError && (
-          <span style={{ fontSize: '0.75rem', color: '#dc2626', width: '100%' }}>{urlError}</span>
-        )}
+        {isCustom && <span className="badge badge-custom">Custom</span>}
+        {urlError && <span className="url-bar-error">{urlError}</span>}
       </div>
 
-      {loading && <p>Loading...</p>}
+      {loading && <Loading />}
       {!loading && sorted.length === 0 && (
-        <p style={{ color: '#888' }}>
+        <div className="empty">
           {recency !== 'all' ? 'No products changed in this time period.' : 'No products found. Run a scrape first.'}
-        </p>
+        </div>
       )}
       {!loading && sorted.length > 0 && (
-        <div style={cardGrid}>
+        <div className="product-grid">
           {sorted.map((p) => {
             const change = changeMap.get(p.name);
-            const badge = change ? changeBadgeColors[change.change_type] : null;
+            const badgeClass = change ? changeBadgeClass[change.change_type] : null;
+            const badgeLabel = change ? changeBadgeLabel[change.change_type] : null;
             const key = itemKey(p);
             const hidden = isHidden(key);
 
@@ -310,96 +260,50 @@ export default function SiteDetail() {
                 href={p.url || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: 'inherit', opacity: hidden ? 0.4 : 1 }}
+                className={`product-card card card-interactive${hidden ? ' product-hidden' : ''}`}
               >
-                <div style={productCard}>
-                  {p.image_url && (
-                    <div style={{ height: 200, overflow: 'hidden', background: '#f9f9f9', position: 'relative' }}>
-                      <img
-                        src={p.image_url}
-                        alt={p.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                        loading="lazy"
-                      />
-                      {badge && (
-                        <span style={{
-                          position: 'absolute',
-                          top: 8,
-                          left: 8,
-                          background: badge.bg,
-                          color: badge.color,
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                        }}>
-                          {badge.label}
-                        </span>
-                      )}
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
-                        style={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          background: 'rgba(0,0,0,0.55)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: 26,
-                          height: 26,
-                          cursor: 'pointer',
-                          fontSize: '0.8rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        title={hidden ? 'Unhide' : 'Hide'}
-                      >
-                        {hidden ? '↩' : '✕'}
-                      </button>
-                    </div>
-                  )}
-                  <div style={{ padding: '0.75rem' }}>
-                    <div style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: 1.3 }}>
-                      {p.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {p.sale_price != null && (
-                        <span style={{ fontWeight: 700, color: '#dc2626' }}>${p.sale_price}</span>
-                      )}
-                      {p.original_price != null && p.sale_price != null && (
-                        <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '0.85rem' }}>
-                          ${p.original_price}
-                        </span>
-                      )}
-                      {p.original_price != null && p.sale_price == null && (
-                        <span style={{ fontWeight: 600 }}>${p.original_price}</span>
-                      )}
-                      {p.discount_pct > 0 && (
-                        <span style={{
-                          marginLeft: 'auto',
-                          background: '#fef2f2',
-                          color: '#dc2626',
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                        }}>
-                          -{p.discount_pct}%
-                        </span>
-                      )}
-                    </div>
-                    {change && (
-                      <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: '#888' }}>
-                        {change.change_type === 'price_drop' && `Was $${change.old_price} → $${change.new_price}`}
-                        {change.change_type === 'price_increase' && `Was $${change.old_price} → $${change.new_price}`}
-                        {change.change_type === 'new' && 'Recently added'}
-                        {' · '}
-                        {new Date(change.detected_at + 'Z').toLocaleDateString()}
-                      </div>
+                {p.image_url && (
+                  <div className="product-image">
+                    <img src={p.image_url} alt={p.name} loading="lazy" />
+                    {badgeClass && (
+                      <span className={`badge ${badgeClass}`}>{badgeLabel}</span>
+                    )}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
+                      className="hide-btn"
+                      title={hidden ? 'Unhide' : 'Hide'}
+                    >
+                      {hidden ? '↩' : '✕'}
+                    </button>
+                  </div>
+                )}
+                <div className="product-body">
+                  <div className="product-name">{p.name}</div>
+                  <div className="product-pricing">
+                    {p.sale_price != null && (
+                      <span className="price-sale">${p.sale_price}</span>
+                    )}
+                    {p.original_price != null && p.sale_price != null && (
+                      <span className="price-original">${p.original_price}</span>
+                    )}
+                    {p.original_price != null && p.sale_price == null && (
+                      <span className="price-only">${p.original_price}</span>
+                    )}
+                    {p.discount_pct > 0 && (
+                      <span className="badge badge-discount" style={{ marginLeft: 'auto' }}>
+                        -{p.discount_pct}%
+                      </span>
                     )}
                   </div>
+                  {change && (
+                    <div className="product-change-info">
+                      {change.change_type === 'price_drop' && `Was $${change.old_price} → $${change.new_price}`}
+                      {change.change_type === 'price_increase' && `Was $${change.old_price} → $${change.new_price}`}
+                      {change.change_type === 'new' && 'Recently added'}
+                      {' · '}
+                      {new Date(change.detected_at + 'Z').toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               </a>
             );
