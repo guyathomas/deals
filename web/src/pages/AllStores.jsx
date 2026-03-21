@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import useHiddenItems from '../hooks/useHiddenItems';
 
 const cardGrid = {
   display: 'grid',
@@ -37,6 +38,8 @@ export default function AllStores() {
   const [filterSite, setFilterSite] = useState('all');
   const [recency, setRecency] = useState('all');
   const [changeType, setChangeType] = useState('all');
+  const [showHidden, setShowHidden] = useState(false);
+  const { hideItem, unhideItem, isHidden, hiddenCount } = useHiddenItems();
 
   useEffect(() => {
     Promise.all([
@@ -75,7 +78,10 @@ export default function AllStores() {
     '30d': 30 * 24 * 60 * 60 * 1000,
   };
 
+  const itemKey = (p) => `${p.site_key}:${p.url}`;
+
   const filtered = products.filter((p) => {
+    if (!showHidden && isHidden(itemKey(p))) return false;
     if (filterSite !== 'all' && p.site_key !== filterSite) return false;
     const change = changeMap.get(`${p.site_key}:${p.name}`);
     if (changeType !== 'all') {
@@ -139,6 +145,12 @@ export default function AllStores() {
             <option value="price_desc">Price: High to Low</option>
             <option value="recent">Most Recently Changed</option>
           </select>
+          {hiddenCount > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
+              Show hidden ({hiddenCount})
+            </label>
+          )}
         </div>
       </div>
 
@@ -153,6 +165,8 @@ export default function AllStores() {
           {sorted.map((p) => {
             const change = changeMap.get(`${p.site_key}:${p.name}`);
             const badge = change ? changeBadgeColors[change.change_type] : null;
+            const key = itemKey(p);
+            const hidden = isHidden(key);
 
             return (
               <a
@@ -160,7 +174,7 @@ export default function AllStores() {
                 href={p.url || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: 'inherit' }}
+                style={{ textDecoration: 'none', color: 'inherit', opacity: hidden ? 0.4 : 1 }}
               >
                 <div style={productCard}>
                   {p.image_url && (
@@ -186,6 +200,28 @@ export default function AllStores() {
                           {badge.label}
                         </span>
                       )}
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          background: 'rgba(0,0,0,0.55)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 26,
+                          height: 26,
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title={hidden ? 'Unhide' : 'Hide'}
+                      >
+                        {hidden ? '↩' : '✕'}
+                      </button>
                     </div>
                   )}
                   <div style={{ padding: '0.75rem' }}>
