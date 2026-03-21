@@ -262,19 +262,19 @@ export default function SiteDetail() {
                 rel="noopener noreferrer"
                 className={`product-card card card-interactive${hidden ? ' product-hidden' : ''}`}
               >
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
+                  className="hide-btn"
+                  title={hidden ? 'Unhide' : 'Hide'}
+                >
+                  {hidden ? '↩' : '✕'}
+                </button>
                 {p.image_url && (
                   <div className="product-image">
                     <img src={p.image_url} alt={p.name} loading="lazy" />
                     {badgeClass && (
                       <span className={`badge ${badgeClass}`}>{badgeLabel}</span>
                     )}
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
-                      className="hide-btn"
-                      title={hidden ? 'Unhide' : 'Hide'}
-                    >
-                      {hidden ? '↩' : '✕'}
-                    </button>
                   </div>
                 )}
                 <div className="product-body">
