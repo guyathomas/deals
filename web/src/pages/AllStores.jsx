@@ -10,8 +10,8 @@ const changeBadgeClass = {
 
 const changeBadgeLabel = {
   new: 'New',
-  price_drop: 'Price Drop',
-  price_increase: 'Price Up',
+  price_drop: 'Price drop',
+  price_increase: 'Price up',
 };
 
 function Loading() {
@@ -104,36 +104,36 @@ export default function AllStores() {
   });
 
   return (
-    <div>
-      <div className="page-header">
-        <Link to="/" className="back-link">&larr; Back</Link>
-        <h1 className="page-title">All Stores</h1>
+    <section>
+      <header className="page-header">
+        <Link to="/" className="back-link" aria-label="Back to overview">&larr;</Link>
+        <h1 className="page-title">All stores</h1>
         <span className="page-subtitle">
           {filtered.length}{filtered.length !== products.length ? ` / ${products.length}` : ''} products
         </span>
         <div className="page-actions">
-          <select value={filterSite} onChange={(e) => setFilterSite(e.target.value)} className="select">
+          <select value={filterSite} onChange={(e) => setFilterSite(e.target.value)} className="select" aria-label="Filter by store">
             <option value="all">All stores</option>
             {sites.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
           </select>
-          <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select">
+          <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select" aria-label="Filter by change type">
             <option value="all">All types</option>
             <option value="new">New</option>
-            <option value="price_drop">Price Drops</option>
-            <option value="price_increase">Price Increases</option>
+            <option value="price_drop">Price drops</option>
+            <option value="price_increase">Price increases</option>
           </select>
-          <select value={recency} onChange={(e) => setRecency(e.target.value)} className="select">
+          <select value={recency} onChange={(e) => setRecency(e.target.value)} className="select" aria-label="Filter by recency">
             <option value="all">All time</option>
             <option value="24h">Last 24h</option>
             <option value="3d">Last 3 days</option>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
           </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select">
-            <option value="discount">Biggest Discount</option>
-            <option value="price_asc">Price: Low → High</option>
-            <option value="price_desc">Price: High → Low</option>
-            <option value="recent">Most Recent</option>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select" aria-label="Sort products">
+            <option value="discount">Biggest discount</option>
+            <option value="price_asc">Price: low to high</option>
+            <option value="price_desc">Price: high to low</option>
+            <option value="recent">Most recent</option>
           </select>
           {hiddenCount > 0 && (
             <label className="hidden-toggle">
@@ -142,7 +142,7 @@ export default function AllStores() {
             </label>
           )}
         </div>
-      </div>
+      </header>
 
       {loading && <Loading />}
       {!loading && sorted.length === 0 && (
@@ -171,6 +171,7 @@ export default function AllStores() {
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
                   className="hide-btn"
                   title={hidden ? 'Unhide' : 'Hide'}
+                  aria-label={hidden ? 'Unhide product' : 'Hide product'}
                 >
                   {hidden ? '↩' : '✕'}
                 </button>
@@ -183,10 +184,10 @@ export default function AllStores() {
                   </div>
                 )}
                 <div className="product-body">
-                  <div className="product-store">
+                  <span className="product-store">
                     {siteNameMap.get(p.site_key) || p.site_key}
-                  </div>
-                  <div className="product-name">{p.name}</div>
+                  </span>
+                  <span className="product-name">{p.name}</span>
                   <div className="product-pricing">
                     {p.sale_price != null && (
                       <span className="price-sale">${p.sale_price}</span>
@@ -198,7 +199,7 @@ export default function AllStores() {
                       <span className="price-only">${p.original_price}</span>
                     )}
                     {p.discount_pct > 0 && (
-                      <span className="badge badge-discount" style={{ marginLeft: 'auto' }}>
+                      <span className="badge badge-discount discount-badge-right">
                         -{p.discount_pct}%
                       </span>
                     )}
@@ -218,6 +219,6 @@ export default function AllStores() {
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }

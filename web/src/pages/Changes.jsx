@@ -39,11 +39,11 @@ export default function Changes() {
   }, [siteFilter, typeFilter, days]);
 
   return (
-    <div>
-      <div className="page-header">
+    <section>
+      <header className="page-header">
         <h1 className="page-title">Changes</h1>
-      </div>
-      <div className="filter-bar">
+      </header>
+      <div className="filter-bar" role="search" aria-label="Filter changes">
         <input
           type="text"
           placeholder="Filter by site..."
@@ -51,15 +51,16 @@ export default function Changes() {
           onChange={(e) => setSiteFilter(e.target.value)}
           className="input"
           style={{ minWidth: 180 }}
+          aria-label="Filter by site name"
         />
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="select">
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="select" aria-label="Filter by type">
           <option value="">All types</option>
           <option value="new">New</option>
-          <option value="price_drop">Price Drop</option>
-          <option value="price_increase">Price Increase</option>
+          <option value="price_drop">Price drop</option>
+          <option value="price_increase">Price increase</option>
           <option value="removed">Removed</option>
         </select>
-        <select value={days} onChange={(e) => setDays(e.target.value)} className="select">
+        <select value={days} onChange={(e) => setDays(e.target.value)} className="select" aria-label="Filter by time period">
           <option value="1">Last 24h</option>
           <option value="3">Last 3 days</option>
           <option value="7">Last 7 days</option>
@@ -74,7 +75,7 @@ export default function Changes() {
       {!loading && changes.length > 0 && (
         <div className="changes-list">
           {changes.map((c) => (
-            <div key={c.id} className="card change-row">
+            <article key={c.id} className="card change-row">
               <span className={`badge ${badgeClassMap[c.change_type] || 'badge-removed'}`}>
                 {c.change_type.replace('_', ' ')}
               </span>
@@ -93,13 +94,13 @@ export default function Changes() {
                   ${c.old_price} → ${c.new_price}
                 </span>
               )}
-              <span className="change-time">
+              <time className="change-time" dateTime={c.detected_at}>
                 {new Date(c.detected_at + 'Z').toLocaleString()}
-              </span>
-            </div>
+              </time>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
