@@ -1,9 +1,9 @@
-const pw = require('playwright-core');
+const { chromium } = require('playwright');
 const { sites } = require('../config/sites');
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 3000;
-const CDP_TIMEOUT = 120000;
+const PAGE_TIMEOUT = 120000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -92,48 +92,42 @@ async function loadMorePages(page, siteConfig) {
   }
 }
 
-// --- Bright Data Scraping Browser ---
-
-function sanitizeError(err) {
-  const sanitized = new Error(err.message.replace(/wss:\/\/[^@]+@/, 'wss://***@'));
-  sanitized.stack = err.stack?.replace(/wss:\/\/[^@]+@/g, 'wss://***@');
-  return sanitized;
-}
-
-function connectScrapingBrowser() {
-  const auth = process.env.BRIGHT_DATA_AUTH;
-  if (!auth) {
-    throw new Error('BRIGHT_DATA_AUTH env var required (format: brd-customer-XXXXX-zone-ZONE:PASSWORD)');
-  }
-  const cdpUrl = `wss://${auth}@brd.superproxy.io:9222`;
-  return pw.chromium.connectOverCDP(cdpUrl);
-}
-
-function launchLocalBrowser() {
-  return pw.chromium.launch({
-    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    headless: true,
+async function launchBrowser() {
+  const headless = process.env.HEADLESS !== 'false';
+  const browser = await chromium.launch({
+    headless,
+    channel: 'chrome', // Use system Chrome instead of Playwright's Chromium
   });
+  return browser;
 }
 
-async function getPage(browser) {
-  const contexts = browser.contexts();
-  if (contexts.length > 0 && contexts[0].pages().length > 0) {
-    return contexts[0].pages()[0];
-  }
-  return browser.newPage();
+async function createStealthPage(browser) {
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    viewport: { width: 1920, height: 1080 },
+    locale: 'en-US',
+    timezoneId: 'America/New_York',
+    permissions: ['geolocation'],
+    geolocation: { latitude: 40.7128, longitude: -74.0060 },
+  });
+
+  const page = await context.newPage();
+
+  // Hide automation flags
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+    window.chrome = { runtime: {} };
+  });
+
+  return page;
 }
 
 async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
   let lastError;
 
-  const useProxy = siteConfig.useProxy === true;
-  let browser;
-  try {
-    browser = useProxy ? await launchLocalBrowser() : await connectScrapingBrowser();
-  } catch (err) {
-    throw sanitizeError(err);
-  }
+  const browser = await launchBrowser();
 
   try {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -143,22 +137,21 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
       }
 
       try {
-        const page = useProxy
-          ? await browser.newPage()
-          : await getPage(browser);
+        const page = await createStealthPage(browser);
 
         validateNavigationUrl(siteConfig.url);
         await page.goto(siteConfig.url, {
           waitUntil: 'domcontentloaded',
-          timeout: CDP_TIMEOUT,
+          timeout: PAGE_TIMEOUT,
         });
+
+        // Give JS time to render dynamic content
+        await sleep(5000);
 
         if (siteConfig.waitFor) {
           await page.waitForSelector(siteConfig.waitFor, {
-            timeout: CDP_TIMEOUT,
+            timeout: 5000,
           });
-        } else {
-          await sleep(10000);
         }
 
         if (siteConfig.scrollToBottom) {
@@ -173,8 +166,8 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
         console.log(`  ${siteConfig.key}: ${products.length} products found`);
         return products;
       } catch (err) {
-        lastError = sanitizeError(err);
-        console.error(`  ${siteConfig.key} attempt ${attempt}: ${lastError.message}`);
+        lastError = err;
+        console.error(`  ${siteConfig.key} attempt ${attempt}: ${err.message}`);
       }
     }
   } finally {

@@ -31,7 +31,7 @@ program
 program
   .command('serve')
   .description('Start the API server and dashboard')
-  .option('-p, --port <number>', 'Port number', '3001')
+  .option('-p, --port <number>', 'Port number', process.env.PORT || '3001')
   .action((opts) => {
     const db = createDb();
     const app = createServer(db, { runScrape: (db, opts) => runScrape(db, opts) });
