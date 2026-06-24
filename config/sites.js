@@ -13,21 +13,6 @@ function defineSite(config) {
 
 const sites = [
   defineSite({
-    key: 'banana-republic',
-    name: 'Banana Republic',
-    url: 'https://bananarepublic.gap.com/browse/men/mens-sale?cid=26219#pageId=0&size=20-1:127,869|77-1:967,968,969,1130,1131,1132|21-1:134,876|86-1:1220,1221,1231,1232|113-1:1531,1532|30-1:209|31-1:214&department=75',
-    selectors: {
-      product: '.plp_product-card',
-      name: '.plp_product-card-name',
-      originalPrice: '.fds__core-web-original-price',
-      salePrice: '.fds__core-web-price-small',
-      url: 'a[href*="/product"]',
-      image: 'img',
-    },
-    waitFor: '.plp_product-card',
-    timeout: 60000,
-  }),
-  defineSite({
     key: 'abercrombie',
     name: 'Abercrombie & Fitch',
     url: 'https://www.abercrombie.com/shop/us/mens-clearance?categoryId=12204&facet=sizes%3A%28%22M%22+%2232%22+%2233%22+%22ONE+SIZE%22%29&facet=lengths%3A%28%22Regular%22+%2232%22%29&filtered=true&rows=90&sort=metricorderedunits&start=0',
@@ -45,7 +30,7 @@ const sites = [
   defineSite({
     key: 'jcrew',
     name: 'J.Crew',
-    url: 'https://www.jcrew.com/sale/men?size=11%20MEDIUM%7C32%7C32%2F32%7C32%2F34%7C33%7C33%2F32%7C33%2F34%7C42%2FR%7CONE%20SIZE',
+    url: 'https://www.jcrew.com/sale/men?size=11%20MEDIUM%7C32%7C32%2F32%7C32%2F34%7C33%7C33%2F32%7C33%2F34%7C42%2FR%7CMEDIUM%7CONE%20SIZE',
     selectors: {
       product: '.product-tile',
       name: 'h2[class*="name"]',
@@ -60,7 +45,7 @@ const sites = [
   defineSite({
     key: 'todd-snyder',
     name: 'Todd Snyder',
-    url: 'https://www.toddsnyder.com/collections/sale#/filter:variant_size:M/filter:variant_size:32/filter:variant_size:42R/filter:variant_size:32$252F32/filter:variant_size:32$252F34/filter:variant_size:33$252F32/filter:variant_size:11/filter:variant_size:10.5',
+    url: 'https://www.toddsnyder.com/collections/sale#/filter:variant_size:O$252FS/filter:variant_size:M/filter:variant_size:42/filter:variant_size:42R/filter:variant_size:11/filter:variant_size:15.5/filter:variant_size:UK$252010',
     selectors: {
       product: '.product-grid-item',
       name: '.title',
@@ -69,98 +54,6 @@ const sites = [
       url: 'a[itemprop="url"]',
       image: 'img[id^="product_image"]',
     },
-  }),
-  defineSite({
-    key: 'gilt',
-    name: 'Gilt',
-    url: 'https://www.gilt.com/boutique/236279?dsi=BTQ-385225864--3566f608-d878-4053-92d8-91272842137a&lsi=26cc0de0-0700-492f-932a-1dca74b2c327&queryID=bfe017ec228eb0bcb31f37bebd575175&page=1&size=Men___Activewear+%26+Loungewear___Medium%7CMen___Casual+Button+Downs___Medium%7CMen___Outerwear___Medium%7CMen___Pants___34%7CMen___Pants___33%7CMen___Shorts___Medium%7CMen___Sportcoats+%26+Blazers___42%7CMen___Suits+%26+Tuxedos___42%7CMen___Sweaters___Medium%7CMen___Sweatshirts+%26+Hoodies___Medium%7CMen___Swimwear___Medium%7CMen___T-Shirts+%26+Polos___Medium&hideSoldOut=true',
-    selectors: {
-      product: '.product-tile',
-      name: 'h3',
-      originalPrice: '.original-price',
-      salePrice: '.sale-price',
-      url: 'a',
-      image: 'img',
-    },
-  }),
-  defineSite({
-    key: 'club-monaco',
-    name: 'Club Monaco',
-    url: 'https://www.clubmonaco.com/collections/mens-sale?filter=||skus.customFields.size*34,42,M',
-    selectors: {
-      product: '.product-card',
-      name: 'a.product-title',
-      originalPrice: 'compare-at-price .pl-price',
-      salePrice: 'sale-price .pl-price',
-      url: 'a[href*="/products/"]',
-      image: 'img.product-card__image',
-    },
-    waitFor: '.product-card',
-    timeout: 45000,
-  }),
-  defineSite({
-    key: 'rag-bone',
-    name: 'rag & bone',
-    url: 'https://www.rag-bone.com/sale/mens/?prefn1=size&prefv1=32%7C33%7CM%7CUnsized%7C32X32%7C32x32%7C32x34%7C33X32%7C33x32%7C33x34&srule=best-matches',
-    selectors: {
-      product: 'section.b-product_tile',
-      name: '.b-product_tile-link',
-      originalPrice: '.b-price-item.m-old',
-      salePrice: '.b-price-item.m-new',
-      url: 'a.b-product_tile-image_link',
-      image: 'img.b-product_image-img',
-    },
-    timeout: 45000,
-  }),
-  defineSite({
-    key: 'saks',
-    name: 'Saks Fifth Avenue',
-    url: 'https://www.saksfifthavenue.com/c/men/sale?prefn1=sizeRefinement&prefv1=11%7C44%7CMedium',
-    loadMore: '.show-more .btn',
-    maxPages: 5,
-    selectors: {
-      product: '.saks-avenue-product-tile',
-      brand: '.product-brand',
-      name: '.tile-product-name .link',
-      originalPrice: '.strike-through .value',
-      salePrice: '.sales .value',
-      url: 'a.thumb-link',
-      image: '.image-container img',
-    },
-    waitFor: '.saks-avenue-product-tile',
-    timeout: 120000,
-  }),
-  defineSite({
-    key: 'mr-porter',
-    name: 'Mr Porter',
-    url: 'https://www.mrporter.com/en-us/mens/sale?facet=ads_f10005_ntk_cs%253A%2522M%2522',
-    selectors: {
-      product: '.ProductItem26',
-      brand: '.ProductItem26__designer',
-      name: '.ProductItem26__name',
-      originalPrice: '.PriceWithSchema11__previousPrice',
-      salePrice: '.PriceWithSchema11__value',
-      url: 'a[href*="/product/"]',
-      image: 'img.Image18__image',
-    },
-    waitFor: '.ProductGrid53',
-    timeout: 60000,
-    useProxy: true,
-  }),
-  defineSite({
-    key: 'ralph-lauren',
-    name: 'Ralph Lauren',
-    url: 'https://www.ralphlauren.com/sale-new-to-sale-men-cg?prefn1=websize&prefv1=11%7CM',
-    selectors: {
-      product: '.product-tile',
-      name: '.product-tile-name',
-      originalPrice: '.price-standard',
-      salePrice: '.price-sales',
-      url: 'a.product-tile-link',
-      image: 'img.product-tile-image',
-    },
-    waitFor: '.product-tile',
-    timeout: 120000,
   }),
 ];
 
