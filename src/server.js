@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { getSiteSummaries, getChanges, getProducts, getAllProducts, getProductHistory, getSiteParams, setSiteParams, deleteSiteParams } = require('./db');
 const { sites } = require('../config/sites');
-const { validateParams, buildEffectiveUrl } = require('./url-utils');
+const { validateParams, buildEffectiveUrl, extractDefaultParams } = require('./url-utils');
 
 function requireAuth(req, res, next) {
   const token = process.env.ADMIN_TOKEN;
@@ -87,7 +87,7 @@ function createServer(db, { runScrape } = {}) {
 
     const customParams = getSiteParams(db, req.params.key);
     const baseUrl = site.url;
-    const defaultParams = new URL(baseUrl).search || '';
+    const defaultParams = extractDefaultParams(baseUrl);
 
     res.json({
       baseUrl,

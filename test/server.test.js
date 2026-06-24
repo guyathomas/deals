@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { validateParams, buildEffectiveUrl } = require('../src/url-utils');
+const { validateParams, buildEffectiveUrl, extractDefaultParams } = require('../src/url-utils');
 
 describe('validateParams', () => {
   it('accepts valid query strings', () => {
@@ -16,7 +16,12 @@ describe('validateParams', () => {
     assert.ok(validateParams({}));
   });
 
-  it('rejects strings not starting with ?', () => {
+  it('accepts valid fragment strings', () => {
+    assert.strictEqual(validateParams('#/filter:size:M'), null);
+    assert.strictEqual(validateParams('#/filter:size:M/filter:size:L'), null);
+  });
+
+  it('rejects strings not starting with ? or #', () => {
     assert.ok(validateParams('size=M'));
     assert.ok(validateParams('https://evil.com'));
     assert.ok(validateParams('/path'));
@@ -58,5 +63,32 @@ describe('buildEffectiveUrl', () => {
     const parsed = new URL(result);
     assert.strictEqual(parsed.searchParams.get('size'), 'M');
     assert.strictEqual(parsed.searchParams.get('sort'), 'price');
+  });
+
+  it('replaces hash with fragment params', () => {
+    const base = 'https://example.com/sale#/filter:size:S';
+    const result = buildEffectiveUrl(base, '#/filter:size:M/filter:size:L');
+    const parsed = new URL(result);
+    assert.strictEqual(parsed.hash, '#/filter:size:M/filter:size:L');
+  });
+
+  it('adds fragment to URL without existing hash', () => {
+    const base = 'https://example.com/sale';
+    const result = buildEffectiveUrl(base, '#/filter:size:M');
+    assert.ok(result.endsWith('#/filter:size:M'));
+  });
+});
+
+describe('extractDefaultParams', () => {
+  it('extracts query params', () => {
+    assert.strictEqual(extractDefaultParams('https://example.com/sale?size=M'), '?size=M');
+  });
+
+  it('extracts fragment params', () => {
+    assert.strictEqual(extractDefaultParams('https://example.com/sale#/filter:size:M'), '#/filter:size:M');
+  });
+
+  it('returns empty string when no params or hash', () => {
+    assert.strictEqual(extractDefaultParams('https://example.com/sale'), '');
   });
 });
