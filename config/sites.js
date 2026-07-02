@@ -55,6 +55,21 @@ const sites = [
       image: 'img[id^="product_image"]',
     },
   }),
+  defineSite({
+    key: 'janji',
+    name: 'Janji',
+    url: 'https://janji.com/collections/sale/filter-men?filter.v.availability=1&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42762323&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42795091&sort_by=manual',
+    selectors: {
+      product: '.card-wrapper',
+      name: '.card__heading',
+      originalPrice: '.price__sale .price-item--regular',
+      salePrice: '.price__sale .price-item--sale',
+      url: '.card__heading a',
+      image: '.card__media img',
+    },
+    waitFor: '.card-wrapper',
+    timeout: 45000,
+  }),
 ];
 
 module.exports = { sites };
