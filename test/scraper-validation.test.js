@@ -32,6 +32,7 @@ describe('ALLOWED_HOSTS', () => {
     assert.ok(ALLOWED_HOSTS.has('www.jcrew.com'));
     assert.ok(ALLOWED_HOSTS.has('www.toddsnyder.com'));
     assert.ok(ALLOWED_HOSTS.has('www.abercrombie.com'));
+    assert.ok(ALLOWED_HOSTS.has('www.levi.com'));
   });
 
   it('does not contain internal hosts', () => {

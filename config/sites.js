@@ -56,6 +56,21 @@ const sites = [
     },
   }),
   defineSite({
+    key: 'levis',
+    name: "Levi's",
+    url: 'https://www.levi.com/US/en_US/sale/mens-sale/c/levi_clothing_men_sale_us/facets/waist/33/length/32',
+    selectors: {
+      product: '[data-testid="product-card"], li[class*="product-item"], div[class*="product-tile"], div[class*="product-card"]',
+      name: '[data-testid*="name"], [class*="product-name"], [class*="tile-name"], h3, h2',
+      originalPrice: 's, del, [class*="strike"], [class*="was"], [class*="original"], [class*="regular"]',
+      salePrice: '[class*="sale"], [class*="now"], [class*="discount"], [class*="current"]',
+      url: 'a[href*="/p/"]',
+      image: 'img',
+    },
+    waitFor: 'a[href*="/p/"]',
+    timeout: 45000,
+  }),
+  defineSite({
     key: 'janji',
     name: 'Janji',
     url: 'https://janji.com/collections/sale/filter-men?filter.v.availability=1&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42762323&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42795091&sort_by=manual',
