@@ -1,5 +1,4 @@
 const DEFAULTS = {
-  scrollToBottom: true,
   timeout: 30000,
 };
 
@@ -26,6 +25,9 @@ const sites = [
     },
     waitFor: '.product-grid__products',
     timeout: 45000,
+    // Abercrombie renders its full size-filtered set (~90 products) on scroll;
+    // the scroll driver loops until the tile count stabilises.
+    pagination: { strategy: 'scroll' },
   }),
   defineSite({
     key: 'jcrew',
@@ -41,6 +43,9 @@ const sites = [
     },
     waitFor: '.product-tile',
     timeout: 45000,
+    // J.Crew serves 60 tiles/page with no infinite scroll; paginate via Npge
+    // (1-indexed) until a page adds no new products.
+    pagination: { strategy: 'query', param: 'Npge', start: 1, step: 1 },
   }),
   defineSite({
     key: 'todd-snyder',
@@ -55,20 +60,41 @@ const sites = [
       image: 'img[id^="product_image"]',
     },
   }),
+  // Bonobos filters live in the URL query string (?pant-waist=…) rather than a
+  // path, and the grid pages behind a "Show More" button. Menswear-only, and
+  // pants vs. tops use separate size systems, so they're two filtered entries.
+  // Prices/name use hashed CSS-module classes, so match on stable substrings.
   defineSite({
-    key: 'janji',
-    name: 'Janji',
-    url: 'https://janji.com/collections/sale/filter-men?filter.v.availability=1&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42762323&filter.v.option.size=gid%3A%2F%2Fshopify%2FFilterSettingGroup%2F42795091&sort_by=manual',
+    key: 'bonobos-pants',
+    name: 'Bonobos (Pants)',
+    url: 'https://bonobos.com/shop/sale?pant-waist=33&pant-length=32',
     selectors: {
-      product: '.product-block.td-main-collection__grid-item--product',
-      name: '.product-block__title',
-      originalPrice: '.price__was',
-      salePrice: '.price__current',
-      url: 'a.product-link',
-      image: '.product-block__image--primary img',
+      product: '.product-tile-component',
+      name: '[class*="productName"]',
+      originalPrice: '[class*="fullPrice"]',
+      salePrice: '[class*="salePrice"]',
+      url: 'a[href*="/products/"]',
+      image: 'img',
     },
-    waitFor: '.product-block',
-    timeout: 45000,
+    loadMore: '.loading-button-component',
+    waitFor: '.product-tile-component',
+    timeout: 60000,
+  }),
+  defineSite({
+    key: 'bonobos-tops',
+    name: 'Bonobos (Tops)',
+    url: 'https://bonobos.com/shop/sale/sale-tops?shirt-size=M',
+    selectors: {
+      product: '.product-tile-component',
+      name: '[class*="productName"]',
+      originalPrice: '[class*="fullPrice"]',
+      salePrice: '[class*="salePrice"]',
+      url: 'a[href*="/products/"]',
+      image: 'img',
+    },
+    loadMore: '.loading-button-component',
+    waitFor: '.product-tile-component',
+    timeout: 60000,
   }),
 ];
 
