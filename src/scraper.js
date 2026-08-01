@@ -67,9 +67,67 @@ async function loadUntilStable(page, siteConfig, step, opts = {}) {
   return prev;
 }
 
-// Step for infinite-scroll listings: scroll to the bottom and let lazy content load.
+const SCROLL_STEP_RATIO = 0.8;
+const SCROLL_SETTLE_MS = 250;
+const MAX_SCROLL_STEPS = 200;
+
+// Inline styles marketing/consent modals pin onto <html>/<body> to lock scrolling.
+const SCROLL_LOCK_PROPS = ['overflow', 'overflow-y', 'position', 'height', 'inset', 'top'];
+
+// Viewport-sized offsets walking `from` down to the bottom of the page. Pure, so
+// the stepping maths stays unit-testable; the DOM walk lives in scrollThroughViewport.
+// Always ends exactly at `scrollHeight` — infinite-scroll listings only fetch the
+// next batch once the bottom is actually reached.
+function scrollOffsets(scrollHeight, innerHeight, from = 0, maxSteps = MAX_SCROLL_STEPS) {
+  const step = Math.max(1, Math.round(innerHeight * SCROLL_STEP_RATIO));
+  const offsets = [];
+  for (let y = Math.max(0, from) + step; y < scrollHeight && offsets.length < maxSteps; y += step) {
+    offsets.push(y);
+  }
+  offsets.push(scrollHeight);
+  return offsets;
+}
+
+// Marketing/consent modals (Attentive email capture, OneTrust cookie banners) lock
+// scrolling by pinning `overflow: hidden; position: absolute` on <html>/<body>.
+// While locked, window.scrollTo is a silent no-op. Clearing the inline styles
+// restores scrolling without needing a dismiss-button selector per vendor per site.
+async function releaseScrollLock(page) {
+  await page.evaluate((props) => {
+    for (const el of [document.documentElement, document.body]) {
+      for (const prop of props) el.style.removeProperty(prop);
+    }
+  }, SCROLL_LOCK_PROPS);
+}
+
+// Walk down to the bottom a viewport at a time so every row intersects the viewport
+// at least once. Lazy-loading grids mount a product's <img> only on intersection, so
+// a single jump to the bottom leaves every skipped row without an image.
+async function scrollThroughViewport(page) {
+  await releaseScrollLock(page);
+
+  const [scrollHeight, innerHeight, scrollY] = await page.evaluate(() => [
+    document.documentElement.scrollHeight,
+    window.innerHeight,
+    window.scrollY,
+  ]);
+
+  const offsets = scrollOffsets(scrollHeight, innerHeight, scrollY);
+  // Capping drops straight to the bottom, silently reintroducing the skipped-row
+  // bug this walk exists to fix — say so rather than quietly losing images.
+  if (offsets.length > MAX_SCROLL_STEPS) {
+    console.log(`    scroll cap hit at ${MAX_SCROLL_STEPS} steps; rows below may lack images`);
+  }
+
+  for (const y of offsets) {
+    await page.evaluate((to) => window.scrollTo(0, to), y);
+    await sleep(SCROLL_SETTLE_MS);
+  }
+}
+
+// Step for infinite-scroll listings: walk to the bottom and let lazy content load.
 async function scrollStep(page) {
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await scrollThroughViewport(page);
   await sleep(1500);
   return true;
 }
@@ -79,7 +137,7 @@ async function scrollStep(page) {
 async function buttonStep(page, siteConfig) {
   const { loadMore } = siteConfig;
 
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await scrollThroughViewport(page);
   await sleep(1000);
 
   const btn = await page.$(loadMore);
@@ -122,6 +180,9 @@ async function loadAllInPage(page, siteConfig) {
   const strategy = pagination.strategy || (siteConfig.loadMore ? 'button' : 'scroll');
   const step = strategy === 'button' ? buttonStep : scrollStep;
   await loadUntilStable(page, siteConfig, step, pagination);
+  // Final pass: tiles added by the last round may never have entered the viewport,
+  // so walk once more before extraction rather than rely on where the loop stopped.
+  await scrollThroughViewport(page);
 }
 
 function dedupeKey(product) {
@@ -170,6 +231,7 @@ async function loadAllByQuery(page, siteConfig, { extractProducts, normalizeProd
       await page.waitForSelector(siteConfig.waitFor, { timeout: 5000 }).catch(() => {});
     }
     await loadUntilStable(page, siteConfig, scrollStep, pagination);
+    await scrollThroughViewport(page);
     const raw = await extractProducts(page, siteConfig);
     console.log(`    query page ${pageIndex + 1}: ${raw.length} products (${url})`);
     return normalizeProducts(raw, url);
@@ -264,4 +326,11 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
   throw lastError;
 }
 
-module.exports = { scrapeSite, validateNavigationUrl, ALLOWED_HOSTS, loadUntilStable, accumulatePages };
+module.exports = {
+  scrapeSite,
+  validateNavigationUrl,
+  ALLOWED_HOSTS,
+  loadUntilStable,
+  accumulatePages,
+  scrollOffsets,
+};
