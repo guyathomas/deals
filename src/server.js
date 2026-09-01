@@ -2,9 +2,10 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { getSiteSummaries, getChanges, getProducts, getAllProducts, getProductHistory, getSiteParams, setSiteParams, deleteSiteParams } = require('./db');
+const { getSiteSummaries, getChanges, getProducts, getAllProducts, getProductHistory, setSiteParams, deleteSiteParams } = require('./db');
 const { sites } = require('../config/sites');
-const { validateParams, buildEffectiveUrl, extractDefaultParams } = require('./url-utils');
+const { validateParams, buildEffectiveUrl } = require('./url-utils');
+const { siteSummary, siteUrlPayload } = require('./payloads');
 
 function requireAuth(req, res, next) {
   const token = process.env.ADMIN_TOKEN;
@@ -33,24 +34,8 @@ function createServer(db, { runScrape } = {}) {
   app.use(express.json());
 
   app.get('/api/sites', (req, res) => {
-    const summaries = getSiteSummaries(db);
-    const summaryMap = new Map(summaries.map((s) => [s.site_key, s]));
-
-    const result = sites.map((site) => {
-      const summary = summaryMap.get(site.key) || {};
-      return {
-        key: site.key,
-        name: site.name,
-        url: site.url,
-        lastScrapedAt: summary.scraped_at || null,
-        productCount: summary.product_count || 0,
-        newCount: summary.new_count || 0,
-        priceDropCount: summary.price_drop_count || 0,
-        priceIncreaseCount: summary.price_increase_count || 0,
-      };
-    });
-
-    res.json(result);
+    const summaryMap = new Map(getSiteSummaries(db).map((s) => [s.site_key, s]));
+    res.json(sites.map((site) => siteSummary(site, summaryMap.get(site.key))));
   });
 
   app.get('/api/changes', (req, res) => {
@@ -85,17 +70,7 @@ function createServer(db, { runScrape } = {}) {
     const site = sites.find((s) => s.key === req.params.key);
     if (!site) return res.status(404).json({ error: 'Site not found' });
 
-    const customParams = getSiteParams(db, req.params.key);
-    const baseUrl = site.url;
-    const defaultParams = extractDefaultParams(baseUrl);
-
-    res.json({
-      baseUrl,
-      defaultParams,
-      customParams: customParams || null,
-      effectiveUrl: customParams ? buildEffectiveUrl(baseUrl, customParams) : baseUrl,
-      isCustom: !!customParams,
-    });
+    res.json(siteUrlPayload(db, site));
   });
 
   app.put('/api/sites/:key/url', requireAuth, (req, res) => {
