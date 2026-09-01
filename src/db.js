@@ -157,7 +157,8 @@ function getChanges(db, { siteKey, days = 7, changeType, limit = 100 } = {}) {
     params.push(changeType);
   }
 
-  sql += ' ORDER BY detected_at DESC LIMIT ?';
+  // id breaks ties: one scrape stamps every change with the same detected_at
+  sql += ' ORDER BY detected_at DESC, id DESC LIMIT ?';
   params.push(limit);
 
   return db.prepare(sql).all(...params);
