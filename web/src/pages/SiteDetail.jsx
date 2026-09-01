@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useHiddenItems from '../hooks/useHiddenItems';
+import { apiGet, isStatic } from '../api';
 
 const changeBadgeClass = {
   new: 'badge-new',
@@ -57,12 +58,18 @@ export default function SiteDetail() {
   const { hideItem, unhideItem, isHidden, hiddenCount } = useHiddenItems();
 
   useEffect(() => {
+    // Guard against a slower response for a previously viewed site landing last
+    // and overwriting this one's data.
+    let active = true;
+    setLoading(true);
+
     Promise.all([
-      fetch(`/api/products?site=${siteKey}`).then((r) => r.json()),
-      fetch(`/api/changes?site=${siteKey}&days=30`).then((r) => r.json()),
-      fetch(`/api/sites/${siteKey}/url`).then((r) => r.json()),
+      apiGet(`/api/products?site=${siteKey}`),
+      apiGet(`/api/changes?site=${siteKey}&days=30`),
+      apiGet(`/api/sites/${siteKey}/url`),
     ])
       .then(([prods, chgs, urlData]) => {
+        if (!active) return;
         setProducts(prods);
         setChanges(chgs);
         setBaseUrl(urlData.baseUrl);
@@ -70,7 +77,13 @@ export default function SiteDetail() {
         setIsCustom(urlData.isCustom);
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [siteKey]);
 
   const saveParams = async () => {
@@ -220,21 +233,29 @@ export default function SiteDetail() {
       <div className="card url-bar">
         <span className="url-bar-label">Scrape URL</span>
         <span className="url-bar-base">{baseDisplay}</span>
-        <input
-          type="text"
-          value={paramsValue}
-          onChange={(e) => setParamsValue(e.target.value)}
-          placeholder="?param=value"
-          className="input input-mono url-bar-input"
-          aria-label="Custom URL parameters"
-        />
-        <button onClick={saveParams} disabled={urlSaving} className="btn btn-primary">
-          Save
-        </button>
-        {isCustom && (
-          <button onClick={resetParams} disabled={urlSaving} className="btn btn-secondary">
-            Reset
-          </button>
+        {isStatic ? (
+          // No API to save to, so show the params as text rather than a field
+          // that looks editable and silently discards input.
+          <span className="url-bar-params input-mono">{paramsValue}</span>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={paramsValue}
+              onChange={(e) => setParamsValue(e.target.value)}
+              placeholder="?param=value"
+              className="input input-mono url-bar-input"
+              aria-label="Custom URL parameters"
+            />
+            <button onClick={saveParams} disabled={urlSaving} className="btn btn-primary">
+              Save
+            </button>
+            {isCustom && (
+              <button onClick={resetParams} disabled={urlSaving} className="btn btn-secondary">
+                Reset
+              </button>
+            )}
+          </>
         )}
         {isCustom && <span className="badge badge-custom">Custom</span>}
         {urlError && <span className="url-bar-error" role="alert">{urlError}</span>}

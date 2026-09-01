@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiGet } from '../api';
 
 const badgeClassMap = {
   new: 'badge-new',
@@ -31,8 +32,7 @@ export default function Changes() {
     if (typeFilter) params.set('type', typeFilter);
     params.set('days', days);
 
-    fetch(`/api/changes?${params}`)
-      .then((r) => r.json())
+    apiGet(`/api/changes?${params}`)
       .then(setChanges)
       .catch(console.error)
       .finally(() => setLoading(false));

@@ -122,6 +122,22 @@ body::after {
   gap: 0.25rem;
 }
 
+.url-bar-params {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.nav-note {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .nav-link {
   text-decoration: none;
   color: var(--text-muted);

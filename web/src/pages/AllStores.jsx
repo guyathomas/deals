@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useHiddenItems from '../hooks/useHiddenItems';
+import { apiGet } from '../api';
 
 const changeBadgeClass = {
   new: 'badge-new',
@@ -38,9 +39,9 @@ export default function AllStores() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/products/all').then((r) => r.json()),
-      fetch('/api/changes?days=30&limit=1000').then((r) => r.json()),
-      fetch('/api/sites').then((r) => r.json()),
+      apiGet('/api/products/all'),
+      apiGet('/api/changes?days=30&limit=1000'),
+      apiGet('/api/sites'),
     ])
       .then(([prods, chgs, siteList]) => {
         setProducts(prods);

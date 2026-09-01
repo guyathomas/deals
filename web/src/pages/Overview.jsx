@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { apiGet } from '../api';
 
 function Loading() {
   return (
@@ -16,8 +17,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/sites')
-      .then((r) => r.json())
+    apiGet('/api/sites')
       .then(setSites)
       .catch(console.error)
       .finally(() => setLoading(false));
