@@ -12,7 +12,8 @@
     "test": "node --test test/*.test.js",
     "scrape": "node src/index.js scrape",
     "serve": "node src/index.js serve",
-    "history": "node src/index.js history"
+    "history": "node src/index.js history",
+    "export": "node src/index.js export"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.2",

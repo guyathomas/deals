@@ -7,6 +7,8 @@ const { Command } = require('commander');
 const { createDb, getChanges } = require('./db');
 const { createServer } = require('./server');
 const { runScrape } = require('./scrape-runner');
+const { buildStaticData, writeStaticData, DEFAULT_CHANGE_DAYS } = require('./static-export');
+const { sites } = require('../config/sites');
 
 const program = new Command();
 
@@ -81,6 +83,30 @@ program
 
     console.log(`\n${changes.length} change(s) in the last ${opts.days} day(s)`);
     db.close();
+  });
+
+program
+  .command('export')
+  .description('Export the database to static JSON for GitHub Pages')
+  .option('-o, --out <dir>', 'Output directory', path.join(__dirname, '..', 'web', 'public', 'api'))
+  .option('-d, --days <number>', 'Days of change history to include', String(DEFAULT_CHANGE_DAYS))
+  .action((opts) => {
+    const changeDays = parseInt(opts.days, 10);
+    if (!Number.isInteger(changeDays) || changeDays < 0) {
+      console.error(`Invalid --days: ${opts.days}`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const db = createDb();
+    try {
+      const files = buildStaticData(db, sites, { changeDays });
+      const count = writeStaticData(opts.out, files);
+      console.log(`Exported ${count} file(s) to ${opts.out}`);
+      console.log(`${files['sites.json'].length} site(s), ${files['products-all.json'].length} product(s), ${files['changes.json'].length} change(s)`);
+    } finally {
+      db.close();
+    }
   });
 
 program.parse();
