@@ -111,6 +111,63 @@ const sites = [
     waitFor: '.product-tile-component',
     timeout: 60000,
   }),
+  // Crate & Barrel and CB2 share one storefront platform, so they share selectors.
+  // The /sale/ grid ships 100 tiles and reveals the rest behind "View More Products".
+  // Prices are label-prefixed ("sugg. $460.00", "Special $289.95"); the parser takes
+  // the first number, which is the low end for range-priced items.
+  defineSite({
+    key: 'crate-and-barrel',
+    name: 'Crate & Barrel',
+    url: 'https://www.crateandbarrel.com/sale/',
+    selectors: {
+      product: '.product-card',
+      name: '.product-name-text',
+      originalPrice: '.regPrice',
+      salePrice: '.salePrice',
+      url: 'a.product-card-link',
+      image: 'img.product-card-main-image',
+    },
+    loadMore: '.view-all-products',
+    waitFor: '.product-card',
+    timeout: 60000,
+  }),
+  defineSite({
+    key: 'cb2',
+    name: 'CB2',
+    url: 'https://www.cb2.com/sale/',
+    selectors: {
+      product: '.product-card',
+      name: '.product-name-text',
+      originalPrice: '.regPrice',
+      salePrice: '.salePrice',
+      url: 'a.product-card-link',
+      image: 'img.product-card-main-image',
+    },
+    loadMore: '.view-all-products',
+    waitFor: '.product-card',
+    timeout: 60000,
+  }),
+  // West Elm lazy-loads the sale grid on scroll and caps it at 120 tiles. The tile
+  // carries two `.sale-price` nodes — a div holding the "Limited Time Offer" label
+  // and a span holding the amount — so the span is qualified explicitly.
+  defineSite({
+    key: 'west-elm',
+    name: 'West Elm',
+    // The bare /all-sale/ path serves a 60-tile grid; the left-nav entry point
+    // (cm_type=lnav) serves the full 120-tile page.
+    url: 'https://www.westelm.com/shop/sale/all-sale/?cm_type=lnav',
+    selectors: {
+      product: '.product-cell-container',
+      name: '.product-name',
+      originalPrice: '.suggested-price',
+      salePrice: 'span.sale-price',
+      url: 'a.product-image-link',
+      image: 'img',
+    },
+    waitFor: '.product-cell-container',
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
 ];
 
 module.exports = { sites };
