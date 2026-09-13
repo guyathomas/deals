@@ -168,6 +168,87 @@ const sites = [
     timeout: 60000,
     pagination: { strategy: 'scroll' },
   }),
+  // Williams-Sonoma is the same Williams-Sonoma, Inc. platform as West Elm
+  // above (identical .product-cell-container/.product-name markup), but its
+  // tile ships a plain-text shortcut for each price — .ossa-reg-amount and
+  // .ossa-sale-amount hold the full "$X.XX" string directly, no currency +
+  // amount spans to reassemble. /shop/sale-special-offer/ is a category hub,
+  // not a product grid; "All Clearance" underneath it (view-all-sale/) is
+  // the flat listing. Product-page detail requires a browser that clears
+  // this site's edge detection — see the stealth note atop src/scraper.js.
+  defineSite({
+    key: 'williams-sonoma',
+    name: 'Williams-Sonoma',
+    url: 'https://www.williams-sonoma.com/shop/sale-special-offer/view-all-sale/',
+    selectors: {
+      product: '.product-cell-container',
+      name: '.product-name',
+      originalPrice: '.ossa-reg-amount',
+      salePrice: '.ossa-sale-amount',
+      url: '.product-image-link',
+      image: 'img',
+    },
+    waitFor: '.product-cell-container',
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
+  // Pottery Barn: same platform and tile shape as Williams-Sonoma, but
+  // without the .ossa-* shortcut — the sale/original amounts are each
+  // buried in their own currency+amount span pair with no distinguishing
+  // class of their own, so the selector reaches for the specific wrapper
+  // (.sale-price / .suggested-price) rather than the tile-wide .amount,
+  // which would otherwise match either price at random. Confirmed against
+  // the live tile: a plain .amount selector cannot tell the two apart.
+  defineSite({
+    key: 'pottery-barn',
+    name: 'Pottery Barn',
+    url: 'https://www.potterybarn.com/shop/sale/exclusive-savings/',
+    selectors: {
+      product: '.product-cell-container',
+      name: '.product-name',
+      originalPrice: '.suggested-price .amount',
+      salePrice: '.sale-price .amount',
+      url: '.product-image-link',
+      image: 'img',
+    },
+    waitFor: '.product-cell-container',
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
+  // Sur La Table needs no browser evasion at all — a plain fetch to a
+  // *product* page returns a complete schema.org ProductGroup with a real
+  // per-variant price. This listing page still goes through Playwright like
+  // every other site here, since the site config has no notion of a
+  // fetch-only source; see src/stores in the standalone homewares-price-
+  // watch tool for the fetch-based path, kept separate rather than grafted
+  // onto this pipeline's browser-only shape.
+  //
+  // The tile carries the product id in its own testid
+  // (product-tile-<id>), shared with two non-numeric testids
+  // (product-tile-image-container, product-tile-quick-add-wrapper) that a
+  // bare prefix match would also catch — excluded explicitly rather than
+  // relying on DOM position, which shifts under a redesign. "Show More"
+  // rewrites the URL to ?page=N rather than appending tiles in place —
+  // confirmed live: clicking it in an already-open tab left the same
+  // products on screen, and only navigating fresh to ?page=2 served new
+  // ones — so this is query pagination, not scroll or a load-more button.
+  defineSite({
+    key: 'sur-la-table',
+    name: 'Sur La Table',
+    url: 'https://www.surlatable.com/sale/',
+    selectors: {
+      product:
+        '[data-testid^="product-tile-"]:not([data-testid="product-tile-image-container"]):not([data-testid="product-tile-quick-add-wrapper"])',
+      name: 'a',
+      originalPrice: '[data-testid$="-sale-price-strikeout"]',
+      salePrice: '[data-testid$="-sale-price"]',
+      url: 'a',
+      image: 'img',
+    },
+    waitFor: '[data-testid^="product-tile-"]',
+    timeout: 60000,
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
+  }),
 ];
 
 module.exports = { sites };
