@@ -3,10 +3,11 @@
 const path = require('path');
 try { process.loadEnvFile(path.join(__dirname, '..', '.env')); } catch {}
 
+const fs = require('fs');
 const { Command } = require('commander');
 const { createDb, getChanges } = require('./db');
 const { createServer } = require('./server');
-const { runScrape } = require('./scrape-runner');
+const { runScrape, recordImport } = require('./scrape-runner');
 const { buildStaticData, writeStaticData, DEFAULT_CHANGE_DAYS } = require('./static-export');
 const { sites } = require('../config/sites');
 
@@ -25,6 +26,43 @@ program
     const db = createDb();
     try {
       await runScrape(db, { siteKey: opts.site });
+    } catch (err) {
+      console.error(`FAILED: ${err.message}`);
+      process.exitCode = 1;
+    } finally {
+      db.close();
+    }
+  });
+
+program
+  .command('import <site> <file>')
+  .description(
+    'Record products for a manualOnly site (bed-bath-beyond, overstock) collected via ' +
+      'its extension/<site>.js snippet — run that in a Claude-in-Chrome session on the ' +
+      "site's sale page, save its JSON array output to <file>, then import it here.",
+  )
+  .action((siteKey, file) => {
+    let rawProducts;
+    try {
+      rawProducts = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (err) {
+      console.error(`Could not read ${file} as JSON: ${err.message}`);
+      process.exitCode = 1;
+      return;
+    }
+    if (!Array.isArray(rawProducts)) {
+      console.error(`${file} must be a JSON array of products — see extension/${siteKey}.js`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const db = createDb();
+    try {
+      recordImport(db, siteKey, rawProducts);
+      console.log('\nDone.');
+    } catch (err) {
+      console.error(`FAILED: ${err.message}`);
+      process.exitCode = 1;
     } finally {
       db.close();
     }

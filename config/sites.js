@@ -249,6 +249,58 @@ const sites = [
     timeout: 60000,
     pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
+  // Bed Bath & Beyond and Overstock both still "Access Denied" a Playwright
+  // browser even with the stealth plugin wired in above — confirmed across
+  // repeat runs, not a one-off. `manualOnly` marks that: `runScrape` skips
+  // these without `-s`, and `deals scrape -s bed-bath-beyond` refuses with a
+  // pointer to `deals import` instead of burning three retries against a
+  // wall that will not move. Selectors are still recorded here — they are
+  // exactly what the agent-assisted snippet in extension/ needs, extracted
+  // from the real DOM, not reused from the automated sites on a guess.
+  //
+  // Its sale grid renders each tile's prices as one combined text node —
+  // "SaleFrom $32.75" and, when a comparison price exists, "Comparison
+  // Price $152.99" appended straight after with no separating markup — so
+  // there is no clean CSS split the way there is for every automated site
+  // here. `originalPrice`/`salePrice` are left off this config on purpose
+  // rather than pointed at a selector that cannot actually isolate either
+  // number; extension/bed-bath-beyond.js parses both out of the combined
+  // text by hand instead.
+  defineSite({
+    key: 'bed-bath-beyond',
+    name: 'Bed Bath & Beyond',
+    url: 'https://www.bedbathandbeyond.com/On-Sale,/sale,/results.html',
+    manualOnly: true,
+    selectors: {
+      product: '[class*="productTile_productTile__"]',
+      name: '[class*="title_wrapper__"]',
+      url: '[class*="productTile_link__"]',
+      image: 'img',
+    },
+    priceText: '[class*="priceContainer"]',
+  }),
+  // Overstock's sale campaign is seasonally renamed (this is "Fall Overhaul
+  // Sale" as of writing) — there is no evergreen /clearance or /outlet path
+  // on the site today, so this URL will need updating when the campaign
+  // does. Unlike Bed Bath & Beyond, its two prices ARE cleanly split by
+  // testid (product-price-amount vs. ordinary-selling-price-amount-<id>),
+  // so the standard selectors apply and extension/overstock.js can reuse
+  // them directly rather than needing bespoke parsing.
+  defineSite({
+    key: 'overstock',
+    name: 'Overstock',
+    url: 'https://www.overstock.com/Fall-Overhaul-Sale,/link,/results.html',
+    manualOnly: true,
+    selectors: {
+      product: '[data-testid="product-tile__polaroid"]',
+      name: '[data-testid="product-tile__product-name"]',
+      originalPrice: '[data-testid^="ordinary-selling-price-amount-"]',
+      salePrice: '[data-testid="product-price-amount"]',
+      url: 'a',
+      image: 'img',
+    },
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
+  }),
 ];
 
 module.exports = { sites };
