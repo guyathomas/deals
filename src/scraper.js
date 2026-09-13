@@ -1,5 +1,17 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const stealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { sites } = require('../config/sites');
+
+// puppeteer-extra-plugin-stealth patches a wide set of automation tells —
+// canvas/WebGL fingerprints, chrome.runtime, permissions.query, iframe
+// content-window, plugin/mimeType shape — beyond the handful `createStealthPage`
+// used to patch by hand below. Confirmed to matter, not applied defensively:
+// Williams-Sonoma and Pottery Barn both hard-blocked (or, for Pottery Barn,
+// intermittently served incomplete pages) under the hand-rolled evasions
+// alone, and cleared consistently across repeat runs once this was wired in.
+// Bed Bath & Beyond and Overstock still "Access Denied" even with this — see
+// config/sites.js for how those two are handled instead.
+chromium.use(stealthPlugin());
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 3000;
@@ -257,17 +269,11 @@ async function createStealthPage(browser) {
     geolocation: { latitude: 40.7128, longitude: -74.0060 },
   });
 
-  const page = await context.newPage();
-
-  // Hide automation flags
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    window.chrome = { runtime: {} };
-  });
-
-  return page;
+  // The automation-flag patches that used to live here (navigator.webdriver,
+  // .plugins, .languages, window.chrome) are now the stealth plugin's job —
+  // it applies a broader, better-maintained version of the same idea via
+  // chromium.use() above. Keeping both risked the two quietly disagreeing.
+  return context.newPage();
 }
 
 async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
