@@ -228,6 +228,10 @@ async function accumulatePages(fetchPage, opts = {}) {
 function buildPageUrl(baseUrl, { param, start = 1, step = 1 }, pageIndex) {
   const url = new URL(baseUrl);
   url.searchParams.set(param, String(start + pageIndex * step));
+  // searchParams re-serializes every param form-style, turning %20 into "+".
+  // Some storefronts read "+" literally, so restore %20 — a real plus is
+  // already %2B at this point, so every "+" left is a space.
+  url.search = url.search.replace(/\+/g, '%20');
   return url.href;
 }
 
@@ -338,5 +342,6 @@ module.exports = {
   ALLOWED_HOSTS,
   loadUntilStable,
   accumulatePages,
+  buildPageUrl,
   scrollOffsets,
 };

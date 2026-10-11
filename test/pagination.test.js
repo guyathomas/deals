@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { loadUntilStable, accumulatePages } = require('../src/scraper');
+const { loadUntilStable, accumulatePages, buildPageUrl } = require('../src/scraper');
 
 // Mock page whose product count follows a scripted sequence.
 // `$$eval` reads the current index; `step` advances it.
@@ -101,5 +101,23 @@ describe('accumulatePages', () => {
     const pages = [[{ url: null, name: 'x' }], [{ url: null, name: 'x' }]];
     const result = await accumulatePages(async (i) => pages[i], { maxPages: 10 });
     assert.strictEqual(result.length, 1);
+  });
+});
+
+describe('buildPageUrl', () => {
+  it('sets the page param from start and step', () => {
+    assert.strictEqual(
+      buildPageUrl('https://example.com/sale?size=M', { param: 'page', start: 1, step: 1 }, 2),
+      'https://example.com/sale?size=M&page=3',
+    );
+  });
+
+  // Bonobos' storefront script re-encodes a "+" in a filter name to %2B and
+  // then matches nothing, so spaces must survive as %20.
+  it('keeps spaces in existing params percent-encoded', () => {
+    assert.strictEqual(
+      buildPageUrl('https://example.com/sale?filter_Pant%20Waist=33', { param: 'page' }, 0),
+      'https://example.com/sale?filter_Pant%20Waist=33&page=1',
+    );
   });
 });
