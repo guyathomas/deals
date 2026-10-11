@@ -44,72 +44,82 @@ const sites = [
     // the scroll driver loops until the tile count stabilises.
     pagination: { strategy: 'scroll' },
   }),
+  // J.Crew's tiles are CSS-module components ("ProductTileRevamped"); the
+  // hashed suffix changes per build, so match on the stable prefix. The sale
+  // price is a single amount (nowPrice) or a "$39.99–$54.99" range
+  // (selectColorPrice) — both carry the sale-price class, and the parser takes
+  // the first number, the low end of a range.
   defineSite({
     key: 'jcrew',
     name: 'J.Crew',
     url: 'https://www.jcrew.com/sale/men?size=11%20MEDIUM%7C32%7C32%2F32%7C32%2F34%7C33%7C33%2F32%7C33%2F34%7C42%2FR%7CMEDIUM%7CONE%20SIZE',
     selectors: {
-      product: '.product-tile',
-      name: 'h2[class*="name"]',
+      product: 'li[class*="ProductTileRevamped__tile___"]',
+      name: '[class*="ProductTileRevamped__tile-name___"]',
       originalPrice: '.strikethrough-price',
-      salePrice: '.is-price',
-      url: 'a[href*="/p/"]',
-      image: 'img.js-product__image',
+      salePrice: '[class*="ProductTilePrice__sale-price___"]',
+      // Product paths are /p/… or /m/… depending on the item, so key on the
+      // tile's own link class rather than the path.
+      url: 'a[class*="ProductTileImage__tile-link___"]',
+      image: 'img[class*="ProductTileImage__tile-image___"]',
     },
-    waitFor: '.product-tile',
     timeout: 45000,
     // J.Crew serves 60 tiles/page with no infinite scroll; paginate via Npge
     // (1-indexed) until a page adds no new products.
     pagination: { strategy: 'query', param: 'Npge', start: 1, step: 1 },
   }),
+  // Todd Snyder's grid is rendered by its search provider: size filters live in
+  // the hash as one /filter.size=<value> segment per size (values URL-encoded),
+  // and the grid pages 72 at a time behind a "View 72 more" button.
   defineSite({
     key: 'todd-snyder',
     name: 'Todd Snyder',
-    url: 'https://www.toddsnyder.com/collections/sale#/filter:variant_size:O$252FS/filter:variant_size:M/filter:variant_size:42/filter:variant_size:42R/filter:variant_size:11/filter:variant_size:15.5/filter:variant_size:UK$252010',
+    url: 'https://www.toddsnyder.com/collections/sale#/filter.size=O%2FS/filter.size=M/filter.size=42/filter.size=42R/filter.size=11/filter.size=15.5/filter.size=UK%2010',
     selectors: {
-      product: '.product-grid-item',
-      name: '.title',
-      originalPrice: '.was_price .money',
-      salePrice: '.price.sale > .money .money',
-      url: 'a[itemprop="url"]',
-      image: 'img[id^="product_image"]',
+      product: '.ts-plp-card',
+      name: '.ts-plp-card__title-link',
+      originalPrice: '.ts-plp-card__price-compare',
+      salePrice: '.ts-plp-card__price-current',
+      url: 'a.ts-plp-card__title-link',
+      image: 'img.ts-plp-card__image--primary',
     },
+    loadMore: '.ss-pagination__view-more',
   }),
-  // Bonobos filters live in the URL query string (?pant-waist=…) rather than a
-  // path, and the grid pages behind a "Show More" button. Menswear-only, and
-  // pants vs. tops use separate size systems, so they're two filtered entries.
-  // Prices/name use hashed CSS-module classes, so match on stable substrings.
+  // Bonobos is a Shopify storefront: filters are ?filter_<Facet Name>=<value>
+  // query params and the grid pages by ?page=N (up to 100 tiles each). The
+  // space in a facet name must be %20 — the storefront re-encodes "+" to %2B
+  // and then matches nothing.
+  // Menswear-only, and pants vs. tops use separate size systems, so they're
+  // two filtered entries.
   defineSite({
     key: 'bonobos-pants',
     name: 'Bonobos (Pants)',
-    url: 'https://bonobos.com/shop/sale?pant-waist=33&pant-length=32',
+    url: 'https://bonobos.com/collections/sale?filter_Pant%20Waist=33&filter_Pant%20Length=32',
     selectors: {
-      product: '.product-tile-component',
-      name: '[class*="productName"]',
-      originalPrice: '[class*="fullPrice"]',
-      salePrice: '[class*="salePrice"]',
-      url: 'a[href*="/products/"]',
-      image: 'img',
+      product: '.product-card',
+      name: '.product-card__title a',
+      originalPrice: '.compare-at-price',
+      salePrice: '.price.custom-price--highlight',
+      url: 'a.product-card__link',
+      image: 'img.product-card__image',
     },
-    loadMore: '.loading-button-component',
-    waitFor: '.product-tile-component',
     timeout: 60000,
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
   defineSite({
     key: 'bonobos-tops',
     name: 'Bonobos (Tops)',
-    url: 'https://bonobos.com/shop/sale/sale-tops?shirt-size=M',
+    url: 'https://bonobos.com/collections/sale-shirts?filter_Shirt%20Size=M',
     selectors: {
-      product: '.product-tile-component',
-      name: '[class*="productName"]',
-      originalPrice: '[class*="fullPrice"]',
-      salePrice: '[class*="salePrice"]',
-      url: 'a[href*="/products/"]',
-      image: 'img',
+      product: '.product-card',
+      name: '.product-card__title a',
+      originalPrice: '.compare-at-price',
+      salePrice: '.price.custom-price--highlight',
+      url: 'a.product-card__link',
+      image: 'img.product-card__image',
     },
-    loadMore: '.loading-button-component',
-    waitFor: '.product-tile-component',
     timeout: 60000,
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
   // Crate & Barrel and CB2 share one storefront platform, so they share selectors.
   // The /sale/ grid ships 100 tiles and reveals the rest behind "View More Products".
