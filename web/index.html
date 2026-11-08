@@ -8,12 +8,9 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>" />
     <script>
       // Apply the owner's theme before first paint so there's no flash.
-      // Same precedence as lib/owner.js: ?owner= first, then the saved choice.
-      try {
-        var o = new URLSearchParams(location.search).get('owner');
-        if (o !== 'guy' && o !== 'arsh') o = localStorage.getItem('deals_owner');
-        if (o === 'guy' || o === 'arsh') document.documentElement.dataset.theme = o;
-      } catch (e) {}
+      // Same rule as lib/owner.js: ?owner= if valid, otherwise Guy.
+      var o = new URLSearchParams(location.search).get('owner');
+      if (o === 'guy' || o === 'arsh') document.documentElement.dataset.theme = o;
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

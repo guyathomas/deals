@@ -7,11 +7,12 @@ export const DEFAULT_OWNER = 'guy';
 
 const isOwner = (value) => OWNER_KEYS.includes(value);
 
-// URL wins, then the viewer's last choice, then Guy.
-export function resolveOwner(search, saved) {
+// URL wins. Without it, keep the owner already on screen (in-app links drop
+// the query string); a fresh visit with no param gets Guy.
+export function resolveOwner(search, current) {
   const fromUrl = new URLSearchParams(search).get(OWNER_PARAM);
   if (isOwner(fromUrl)) return fromUrl;
-  return isOwner(saved) ? saved : DEFAULT_OWNER;
+  return isOwner(current) ? current : DEFAULT_OWNER;
 }
 
 // `search` with the owner param set, other params kept.
