@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Link } from 'react-router-dom';
 import Overview from './pages/Overview';
 import AllStores from './pages/AllStores';
 import Changes from './pages/Changes';
@@ -7,10 +7,10 @@ import SiteDetail from './pages/SiteDetail';
 import { getMeta, isStatic } from './api';
 import useOwner, { OwnerProvider, OWNERS } from './hooks/useOwner';
 
-function OwnerTabs() {
+function OwnerSwitch() {
   const { owner, setOwner } = useOwner();
   return (
-    <div className="owner-tabs" role="tablist" aria-label="Whose stores">
+    <div className="owner-switch" role="tablist" aria-label="Whose stores">
       {OWNERS.map((o) => (
         <button
           key={o.key}
@@ -27,7 +27,10 @@ function OwnerTabs() {
   );
 }
 
-export default function App() {
+const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
+
+function Shell() {
+  const { copy } = useOwner();
   const [snapshotAt, setSnapshotAt] = useState(null);
 
   useEffect(() => {
@@ -36,23 +39,29 @@ export default function App() {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    document.title = `${copy.brand} — ${copy.tagline}`;
+  }, [copy]);
+
   return (
-    <OwnerProvider>
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <nav className="nav" aria-label="Main navigation">
-        <span className="nav-brand">Deals</span>
-        <div className="nav-links">
-          <NavLink to="/" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} end>Overview</NavLink>
-          <NavLink to="/all" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>All Stores</NavLink>
-          <NavLink to="/changes" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Changes</NavLink>
+    <>
+      <header className="nav">
+        <div className="nav-inner">
+          <Link to="/" className="nav-brand">
+            <span className="nav-brand-mark" aria-hidden="true">{copy.brandMark}</span>
+            <span className="nav-brand-text">
+              <span className="nav-brand-name">{copy.brand}</span>
+              <span className="nav-brand-tagline">{copy.tagline}</span>
+            </span>
+          </Link>
+          <nav className="nav-links" aria-label="Main navigation">
+            <NavLink to="/" className={navClass} end>{copy.nav.overview}</NavLink>
+            <NavLink to="/all" className={navClass}>{copy.nav.all}</NavLink>
+            <NavLink to="/changes" className={navClass}>{copy.nav.changes}</NavLink>
+          </nav>
+          <OwnerSwitch />
         </div>
-        {isStatic && (
-          <span className="nav-note">
-            {snapshotAt ? `Static snapshot · ${new Date(snapshotAt).toLocaleString()}` : 'Static snapshot'}
-          </span>
-        )}
-      </nav>
-      <OwnerTabs />
+      </header>
       <main className="page" id="main-content">
         <Routes>
           <Route path="/" element={<Overview />} />
@@ -61,7 +70,21 @@ export default function App() {
           <Route path="/site/:siteKey" element={<SiteDetail />} />
         </Routes>
       </main>
-    </BrowserRouter>
+      {isStatic && (
+        <footer className="footer">
+          {snapshotAt ? `Static snapshot · ${new Date(snapshotAt).toLocaleString()}` : 'Static snapshot'}
+        </footer>
+      )}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <OwnerProvider>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <Shell />
+      </BrowserRouter>
     </OwnerProvider>
   );
 }

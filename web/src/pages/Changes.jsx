@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiGet } from '../api';
+import Loading from '../components/Loading';
+import { parseUtc, timeAgo, money } from '../lib/format';
 import useOwner, { siteOwner } from '../hooks/useOwner';
 
 const badgeClassMap = {
@@ -9,16 +11,6 @@ const badgeClassMap = {
   removed: 'badge-removed',
 };
 
-function Loading() {
-  return (
-    <div className="loading">
-      <span className="loading-dot" />
-      <span className="loading-dot" />
-      <span className="loading-dot" />
-    </div>
-  );
-}
-
 export default function Changes() {
   const [changes, setChanges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +18,7 @@ export default function Changes() {
   const [typeFilter, setTypeFilter] = useState('');
   const [days, setDays] = useState(7);
   const [sites, setSites] = useState(null);
-  const { owner } = useOwner();
+  const { owner, copy } = useOwner();
 
   useEffect(() => {
     apiGet('/api/sites').then(setSites).catch(console.error);
@@ -46,21 +38,21 @@ export default function Changes() {
   }, [siteFilter, typeFilter, days]);
 
   const ownKeys = sites && new Set(sites.filter((s) => siteOwner(s) === owner).map((s) => s.key));
+  const siteNames = new Map((sites || []).map((x) => [x.key, x.name]));
   const ownChanges = ownKeys ? changes.filter((c) => ownKeys.has(c.site_key)) : changes;
 
   return (
     <section>
       <header className="page-header">
-        <h1 className="page-title">Changes</h1>
+        <h1 className="page-title">{copy.changesTitle}</h1>
       </header>
-      <div className="filter-bar" role="search" aria-label="Filter changes">
+      <div className="toolbar" role="search" aria-label="Filter changes">
         <input
           type="text"
           placeholder="Filter by site..."
           value={siteFilter}
           onChange={(e) => setSiteFilter(e.target.value)}
-          className="input"
-          style={{ minWidth: 180 }}
+          className="input toolbar-search"
           aria-label="Filter by site name"
         />
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="select" aria-label="Filter by type">
@@ -89,8 +81,8 @@ export default function Changes() {
               <span className={`badge ${badgeClassMap[c.change_type] || 'badge-removed'}`}>
                 {c.change_type.replace('_', ' ')}
               </span>
-              <span className="change-site">{c.site_key}</span>
               <span className="change-product">
+                <span className="change-site">{siteNames.get(c.site_key) || c.site_key}</span>
                 {c.product_url ? (
                   <a href={c.product_url} target="_blank" rel="noopener noreferrer">
                     {c.product_name}
@@ -101,11 +93,11 @@ export default function Changes() {
               </span>
               {c.price_diff != null && (
                 <span className={`change-price ${c.price_diff < 0 ? 'change-price-drop' : 'change-price-up'}`}>
-                  ${c.old_price} → ${c.new_price}
+                  {money(c.old_price)} → {money(c.new_price)}
                 </span>
               )}
-              <time className="change-time" dateTime={c.detected_at}>
-                {new Date(c.detected_at + 'Z').toLocaleString()}
+              <time className="change-time" dateTime={c.detected_at} title={parseUtc(c.detected_at).toLocaleString()}>
+                {timeAgo(c.detected_at)}
               </time>
             </article>
           ))}
