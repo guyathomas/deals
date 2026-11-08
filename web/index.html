@@ -7,9 +7,11 @@
     <meta name="description" content="Track product prices and deals across your favorite stores" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>" />
     <script>
-      // Apply the saved owner's theme before first paint so there's no flash.
+      // Apply the owner's theme before first paint so there's no flash.
+      // Same precedence as lib/owner.js: ?owner= first, then the saved choice.
       try {
-        var o = localStorage.getItem('deals_owner');
+        var o = new URLSearchParams(location.search).get('owner');
+        if (o !== 'guy' && o !== 'arsh') o = localStorage.getItem('deals_owner');
         if (o === 'guy' || o === 'arsh') document.documentElement.dataset.theme = o;
       } catch (e) {}
     </script>

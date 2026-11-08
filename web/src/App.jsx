@@ -81,10 +81,10 @@ function Shell() {
 
 export default function App() {
   return (
-    <OwnerProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <OwnerProvider>
         <Shell />
-      </BrowserRouter>
-    </OwnerProvider>
+      </OwnerProvider>
+    </BrowserRouter>
   );
 }
