@@ -12,17 +12,22 @@ before(async () => {
 });
 
 describe('resolveOwner', () => {
-  it('prefers the owner in the URL over the saved one', () => {
+  it('uses the owner in the URL', () => {
     assert.strictEqual(resolveOwner('?owner=arsh', 'guy'), 'arsh');
   });
 
-  it('falls back to the saved owner when the URL has none', () => {
+  it('defaults to Guy on a fresh visit with no owner in the URL', () => {
+    assert.strictEqual(resolveOwner(''), 'guy');
+    assert.strictEqual(resolveOwner('?days=7'), 'guy');
+  });
+
+  it('keeps the current owner when an in-app link drops the param', () => {
     assert.strictEqual(resolveOwner('', 'arsh'), 'arsh');
   });
 
-  it('ignores unknown owners in the URL and in storage', () => {
+  it('ignores unknown owners', () => {
     assert.strictEqual(resolveOwner('?owner=bob', 'arsh'), 'arsh');
-    assert.strictEqual(resolveOwner('?owner=bob', 'eve'), 'guy');
+    assert.strictEqual(resolveOwner('?owner=bob'), 'guy');
   });
 });
 

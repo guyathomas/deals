@@ -1,11 +1,11 @@
-import { createContext, useContext, useCallback, useEffect } from 'react';
+import { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DEFAULT_OWNER, OWNER_PARAM, resolveOwner, withOwner } from '../lib/owner';
 
 // Whose stores are on screen. Sites carry an `owner` ('guy' | 'arsh'); one
 // exported before owners existed has none and belongs to Guy.
 // Each owner also picks the look of the app: Guy gets a classic dark mode,
-// Arsh a wizarding-school theme. `copy` holds the words that change with it.
+// Arsh Gryffindor scarlet and gold. `copy` holds the words that change with it.
 export const OWNERS = [
   {
     key: 'guy',
@@ -28,40 +28,22 @@ export const OWNERS = [
     key: 'arsh',
     label: 'Arsh',
     copy: {
-      brand: 'The Daily Deal',
-      brandMark: 'ϟ',
-      tagline: 'Bargains, by owl',
-      nav: { overview: 'Great Hall', all: 'Diagon Alley', changes: 'Owl Post' },
-      overviewTitle: 'The Great Hall',
-      overviewSubtitle: 'Every shop in your ledger, and what has changed since the last owl.',
+      brand: 'Gryffindor Deals',
+      brandMark: 'G',
+      tagline: 'Brave bargains only',
+      nav: { overview: 'Common Room', all: 'Diagon Alley', changes: 'Owl Post' },
+      overviewTitle: 'The Common Room',
+      overviewSubtitle: 'Every shop worth the trip, and what has changed since the last owl.',
       allTitle: 'Diagon Alley',
       changesTitle: 'Owl Post',
       browseAll: 'Wander Diagon Alley',
       loading: 'Consulting the crystal ball',
-      empty: 'No shops in your ledger yet. Summon a scrape to add them.',
+      empty: 'No shops on the list yet. Summon a scrape to add them.',
     },
   },
 ];
 
-const STORAGE_KEY = 'deals_owner';
-
 export const siteOwner = (site) => site.owner || DEFAULT_OWNER;
-
-function loadSaved() {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function save(owner) {
-  try {
-    localStorage.setItem(STORAGE_KEY, owner);
-  } catch {
-    // Private mode or blocked storage: the choice just won't persist.
-  }
-}
 
 const OwnerContext = createContext({ owner: DEFAULT_OWNER, setOwner: () => {}, copy: OWNERS[0].copy });
 
@@ -69,7 +51,9 @@ const OwnerContext = createContext({ owner: DEFAULT_OWNER, setOwner: () => {}, c
 export function OwnerProvider({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const owner = resolveOwner(location.search, loadSaved());
+  const current = useRef(DEFAULT_OWNER);
+  const owner = resolveOwner(location.search, current.current);
+  current.current = owner;
 
   const setOwner = useCallback(
     (next) => navigate({ pathname: location.pathname, search: withOwner(location.search, next) }),
@@ -77,9 +61,8 @@ export function OwnerProvider({ children }) {
   );
 
   // Plain in-app links drop the query string; put the owner back so the
-  // address bar is always shareable, and remember it for bare visits.
+  // address bar is always shareable.
   useEffect(() => {
-    save(owner);
     if (new URLSearchParams(location.search).get(OWNER_PARAM) !== owner) {
       navigate({ pathname: location.pathname, search: withOwner(location.search, owner) }, { replace: true });
     }
