@@ -28,8 +28,12 @@ function normalizeImageUrl(src, baseUrl) {
   return resolveUrl(src, baseUrl);
 }
 
-function extractProducts(page, siteConfig) {
-  return page.evaluate(({ selectors }) => {
+// Some grids leave a tile's <img> empty until it is scrolled into view
+// (Anthropologie) or render the image outside the tile (Zara). The page still
+// says which image goes with which product URL — in its JSON-LD product list
+// and in linked images elsewhere in the grid — so collect those as hints.
+async function extractProducts(page, siteConfig) {
+  const { products, imageHints } = await page.evaluate(({ selectors }) => {
     const productEls = document.querySelectorAll(selectors.product);
     const products = [];
 
@@ -60,8 +64,53 @@ function extractProducts(page, siteConfig) {
       });
     }
 
-    return products;
+    const imageHints = [];
+    const addLdHints = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) return node.forEach(addLdHints);
+      const image = Array.isArray(node.image) ? node.image[0] : node.image;
+      const imageSrc = image && typeof image === 'object' ? image.url : image;
+      if (node.url && typeof imageSrc === 'string') imageHints.push({ url: node.url, image: imageSrc });
+      Object.values(node).forEach(addLdHints);
+    };
+    for (const script of document.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        addLdHints(JSON.parse(script.textContent));
+      } catch {
+        // Malformed JSON-LD: skip it, the tile selectors still apply.
+      }
+    }
+    for (const img of document.querySelectorAll('a[href] img')) {
+      const src = img.getAttribute('src') || img.getAttribute('data-src');
+      if (src) imageHints.push({ url: img.closest('a[href]').getAttribute('href'), image: src });
+    }
+
+    return { products, imageHints };
   }, { selectors: siteConfig.selectors });
+
+  return fillMissingImages(products, imageHints, page.url());
+}
+
+function urlKey(href, baseUrl) {
+  const resolved = resolveUrl(href, baseUrl);
+  return resolved ? resolved.split(/[?#]/)[0] : null;
+}
+
+const hasImage = (src) => Boolean(src) && !src.startsWith('data:');
+
+// Pure: give tiles without a usable image the hinted image for their product
+// URL (query and hash ignored). Tiles that already have an image keep it.
+function fillMissingImages(rawProducts, imageHints, baseUrl) {
+  const byUrl = new Map();
+  for (const { url, image } of imageHints) {
+    const key = urlKey(url, baseUrl);
+    if (key && hasImage(image) && !byUrl.has(key)) byUrl.set(key, image);
+  }
+  return rawProducts.map((p) => {
+    if (hasImage(p.imageUrl)) return p;
+    const hinted = byUrl.get(urlKey(p.url, baseUrl));
+    return hinted ? { ...p, imageUrl: hinted } : p;
+  });
 }
 
 function normalizeProducts(rawProducts, baseUrl) {
@@ -87,5 +136,6 @@ module.exports = {
   normalizeUrl,
   normalizeImageUrl,
   extractProducts,
+  fillMissingImages,
   normalizeProducts,
 };

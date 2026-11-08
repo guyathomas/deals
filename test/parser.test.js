@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { parsePriceString, calculateDiscount, normalizeUrl, normalizeImageUrl, normalizeProducts } = require('../src/parser');
+const { parsePriceString, calculateDiscount, normalizeUrl, normalizeImageUrl, normalizeProducts, fillMissingImages } = require('../src/parser');
 
 describe('parsePriceString', () => {
   it('parses simple dollar amount', () => {
@@ -104,5 +104,34 @@ describe('normalizeProducts', () => {
     assert.strictEqual(result[0].salePrice, 75);
     assert.strictEqual(result[0].discountPct, 25);
     assert.strictEqual(result[0].url, 'https://example.com/products/shirt');
+  });
+});
+
+describe('fillMissingImages', () => {
+  const base = 'https://www.anthropologie.com/sale-all?page=1';
+
+  it('fills a missing image from a hint for the same product URL', () => {
+    const raw = [{ name: 'Cardigan', url: '/shop/maeve-cardigan?color=553', imageUrl: null }];
+    const hints = [{ url: 'https://www.anthropologie.com/shop/maeve-cardigan', image: 'https://img/cardigan.jpg' }];
+    assert.strictEqual(fillMissingImages(raw, hints, base)[0].imageUrl, 'https://img/cardigan.jpg');
+  });
+
+  it('replaces a data: placeholder but keeps a real tile image', () => {
+    const raw = [
+      { name: 'A', url: '/shop/a', imageUrl: 'data:image/gif;base64,R0lGOD' },
+      { name: 'B', url: '/shop/b', imageUrl: 'https://img/b-tile.jpg' },
+    ];
+    const hints = [
+      { url: '/shop/a', image: 'https://img/a.jpg' },
+      { url: '/shop/b', image: 'https://img/b-hint.jpg' },
+    ];
+    const [a, b] = fillMissingImages(raw, hints, base);
+    assert.strictEqual(a.imageUrl, 'https://img/a.jpg');
+    assert.strictEqual(b.imageUrl, 'https://img/b-tile.jpg');
+  });
+
+  it('leaves the image empty when no hint matches', () => {
+    const raw = [{ name: 'C', url: '/shop/c', imageUrl: null }];
+    assert.strictEqual(fillMissingImages(raw, [{ url: '/shop/z', image: 'https://img/z.jpg' }], base)[0].imageUrl, null);
   });
 });
