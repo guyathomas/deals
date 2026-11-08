@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiGet } from '../api';
+import useOwner, { siteOwner } from '../hooks/useOwner';
 
 function Loading() {
   return (
@@ -15,6 +16,7 @@ function Loading() {
 export default function Overview() {
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { owner } = useOwner();
 
   useEffect(() => {
     apiGet('/api/sites')
@@ -25,6 +27,8 @@ export default function Overview() {
 
   if (loading) return <Loading />;
 
+  const ownSites = sites.filter((s) => siteOwner(s) === owner);
+
   return (
     <section>
       <header className="page-header">
@@ -33,8 +37,11 @@ export default function Overview() {
           <Link to="/all" className="btn btn-primary">Browse all</Link>
         </div>
       </header>
+      {ownSites.length === 0 && (
+        <div className="empty">No stores on this tab yet. Run a scrape and export to add them.</div>
+      )}
       <div className="site-grid">
-        {sites.map((site) => (
+        {ownSites.map((site) => (
           <Link key={site.key} to={`/site/${site.key}`} className="card card-interactive site-card">
             <span className="site-card-name">{site.name}</span>
             <span className="site-card-meta">

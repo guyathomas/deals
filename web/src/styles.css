@@ -765,3 +765,42 @@ a.site-card {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ── Owner tabs (Guy / Arsh) ── */
+.owner-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 2rem 0;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.owner-tab {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.owner-tab:hover {
+  color: var(--text);
+}
+
+.owner-tab.active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 640px) {
+  .owner-tabs {
+    padding: 0.75rem 1rem 0;
+  }
+}
