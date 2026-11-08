@@ -45,7 +45,8 @@ const sites = [
       url: 'a[data-testid="catalog-product-card-image-link"]',
       image: '[data-testid="catalog-product-card-image"]',
     },
-    waitFor: '.product-grid__products',
+    // Wait for real tiles: the grid wrapper renders even when no tiles do.
+    waitFor: '[data-testid="catalog-product-card"]',
     timeout: 45000,
     // Abercrombie renders its full size-filtered set (~90 products) on scroll;
     // the scroll driver loops until the tile count stabilises.
@@ -323,11 +324,7 @@ const sites = [
   // filters in the URL they're baked in below; where it doesn't (Zara), the
   // whole sale grid is tracked.
   //
-  // NOT YET VERIFIED LIVE: these stores sit behind bot checks that block the
-  // sandbox these entries were written in, so the URLs and selectors follow
-  // each store's known platform layout rather than a captured tile. Run
-  // `deals scrape -s <key>` locally once per store; a 0-product result means
-  // the selectors need adjusting against the real markup.
+  // Selectors checked against the live sites 2026-11-08 (see TODO.md).
   //
   // Abercrombie and J.Crew reuse the men's entries' platforms and selectors.
   // Unknown size values in an OR'd size facet are ignored by these sites, so
@@ -363,7 +360,7 @@ const sites = [
       url: 'a[data-testid="catalog-product-card-image-link"]',
       image: '[data-testid="catalog-product-card-image"]',
     },
-    waitFor: '.product-grid__products',
+    waitFor: '[data-testid="catalog-product-card"]',
     timeout: 45000,
     pagination: { strategy: 'scroll' },
   }),
@@ -376,9 +373,12 @@ const sites = [
     owner: 'arsh',
     url: 'https://www.zara.com/us/en/woman-special-prices-l1314.html',
     selectors: {
-      product: '.product-grid-product',
+      // Zara renders image and info as separate siblings, and one grid block
+      // can hold several products — so the info node is the product root and
+      // tiles come through without an image.
+      product: '.product-grid-product-info',
       name: '.product-grid-product-info__name',
-      originalPrice: '.price__amount--old .money-amount__main',
+      originalPrice: '.price__amount-old .money-amount__main',
       salePrice: '.price__amount--on-sale .money-amount__main',
       url: 'a.product-link',
       image: 'img',
@@ -419,19 +419,19 @@ const sites = [
     timeout: 60000,
     pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
-  // Aritzia is Salesforce Commerce Cloud like Reformation. It sells almost no
-  // shoes, so only the clothing sizes are filtered.
+  // Aritzia's grid is data-testid driven; the size facet is `sizeRun`. It
+  // sells almost no shoes, so only the clothing sizes are filtered.
   defineSite({
     key: 'aritzia',
     name: 'Aritzia',
     owner: 'arsh',
-    url: 'https://www.aritzia.com/us/en/sale?prefn1=size&prefv1=XS%7CS%7C2%7C4',
+    url: 'https://www.aritzia.com/us/en/sale?sizeRun=XS%7CS%7C2%7C4',
     selectors: {
-      product: '.product-tile',
-      name: '.product-name',
-      originalPrice: '.price-standard',
-      salePrice: '.price-sales',
-      url: 'a',
+      product: '[data-testid^="plp-product-tile-"]',
+      name: '[data-testid="plp-product-name"]',
+      originalPrice: '[data-testid="plp-list-price-text"]',
+      salePrice: '[data-testid="plp-sale-price-text"]',
+      url: 'a[href*="/product/"]',
       image: 'img',
     },
     timeout: 60000,

@@ -48,14 +48,15 @@ either site will diff against those 2-item snapshots and report a wall of
 import: delete `data/deals.db` (and the `-shm`/`-wal` files next to it) to
 start clean, or accept the one noisy diff on the first real import.
 
-## Arsh's stores (unverified)
+## Arsh's stores
 
 Reformation, Abercrombie (women), Zara, J.Crew (women), Anthropologie and
 Aritzia show under the **Arsh** tab (sizes: tops XS/S, bottoms 2–4, shoes
-8.5–9). Their URLs and selectors were written without a live page — the sites'
-bot checks blocked the sandbox — so check each once locally:
+8.5–9). Checked live 2026-11-08: all scrape except Reformation.
 
-- [ ] `deals scrape -s reformation` (and `abercrombie-womens`, `zara`,
-      `jcrew-womens`, `anthropologie`, `aritzia`)
-- [ ] For any that return 0 products, fix its selectors in `config/sites.js`
+- [ ] Reformation: `/sale` is a "sign up to hear about it" page between
+      sales, so it times out with 0 tiles. Selectors were confirmed on
+      `/dresses`; rerun `deals scrape -s reformation` once a sale is live.
+- Abercrombie (both) intermittently scrape 0 in a full run, then succeed on
+  a single-site retry; markup is unchanged.
 - [ ] `npm run export` and commit `web/public/api/` so the Pages site shows them
