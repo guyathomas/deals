@@ -1,29 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useHiddenItems from '../hooks/useHiddenItems';
+import Loading from '../components/Loading';
+import ProductCard from '../components/ProductCard';
 import { apiGet, isStatic } from '../api';
-
-const changeBadgeClass = {
-  new: 'badge-new',
-  price_drop: 'badge-drop',
-  price_increase: 'badge-increase',
-};
-
-const changeBadgeLabel = {
-  new: 'New',
-  price_drop: 'Price drop',
-  price_increase: 'Price up',
-};
-
-function Loading() {
-  return (
-    <div className="loading">
-      <span className="loading-dot" />
-      <span className="loading-dot" />
-      <span className="loading-dot" />
-    </div>
-  );
-}
 
 function getAdminToken() {
   return localStorage.getItem('deals_admin_token');
@@ -56,6 +36,18 @@ export default function SiteDetail() {
   const [urlError, setUrlError] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const { hideItem, unhideItem, isHidden, hiddenCount } = useHiddenItems();
+  const [siteName, setSiteName] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    setSiteName('');
+    apiGet('/api/sites')
+      .then((list) => active && setSiteName(list.find((s) => s.key === siteKey)?.name || ''))
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, [siteKey]);
 
   useEffect(() => {
     // Guard against a slower response for a previously viewed site landing last
@@ -197,38 +189,39 @@ export default function SiteDetail() {
     <section>
       <header className="page-header">
         <Link to="/" className="back-link" aria-label="Back to overview">&larr;</Link>
-        <h1 className="page-title">{siteKey}</h1>
+        <h1 className="page-title">{siteName || siteKey}</h1>
         <span className="page-subtitle">
           {filtered.length}{filtered.length !== products.length ? ` / ${products.length}` : ''} products
         </span>
-        <div className="page-actions">
-          <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select" aria-label="Filter by change type">
-            <option value="all">All types</option>
-            <option value="new">New</option>
-            <option value="price_drop">Price drops</option>
-            <option value="price_increase">Price increases</option>
-          </select>
-          <select value={recency} onChange={(e) => setRecency(e.target.value)} className="select" aria-label="Filter by recency">
-            <option value="all">All time</option>
-            <option value="24h">Last 24h</option>
-            <option value="3d">Last 3 days</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select" aria-label="Sort products">
-            <option value="discount">Biggest discount</option>
-            <option value="price_asc">Price: low to high</option>
-            <option value="price_desc">Price: high to low</option>
-            <option value="recent">Most recent</option>
-          </select>
-          {hiddenCount > 0 && (
-            <label className="hidden-toggle">
-              <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
-              Show hidden ({hiddenCount})
-            </label>
-          )}
-        </div>
       </header>
+
+      <div className="toolbar" role="group" aria-label="Filter and sort">
+        <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select" aria-label="Filter by change type">
+          <option value="all">All types</option>
+          <option value="new">New</option>
+          <option value="price_drop">Price drops</option>
+          <option value="price_increase">Price increases</option>
+        </select>
+        <select value={recency} onChange={(e) => setRecency(e.target.value)} className="select" aria-label="Filter by recency">
+          <option value="all">All time</option>
+          <option value="24h">Last 24h</option>
+          <option value="3d">Last 3 days</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="select" aria-label="Sort products">
+          <option value="discount">Biggest discount</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+          <option value="recent">Most recent</option>
+        </select>
+        {hiddenCount > 0 && (
+          <label className="hidden-toggle">
+            <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
+            Show hidden ({hiddenCount})
+          </label>
+        )}
+      </div>
 
       <div className="card url-bar">
         <span className="url-bar-label">Scrape URL</span>
@@ -270,65 +263,16 @@ export default function SiteDetail() {
       {!loading && sorted.length > 0 && (
         <div className="product-grid">
           {sorted.map((p) => {
-            const change = changeMap.get(p.name);
-            const badgeClass = change ? changeBadgeClass[change.change_type] : null;
-            const badgeLabel = change ? changeBadgeLabel[change.change_type] : null;
             const key = itemKey(p);
             const hidden = isHidden(key);
-
             return (
-              <a
+              <ProductCard
                 key={p.id}
-                href={p.url || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`product-card card card-interactive${hidden ? ' product-hidden' : ''}`}
-              >
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); hidden ? unhideItem(key) : hideItem(key); }}
-                  className="hide-btn"
-                  title={hidden ? 'Unhide' : 'Hide'}
-                  aria-label={hidden ? 'Unhide product' : 'Hide product'}
-                >
-                  {hidden ? '↩' : '✕'}
-                </button>
-                {p.image_url && (
-                  <div className="product-image">
-                    <img src={p.image_url} alt={p.name} loading="lazy" />
-                    {badgeClass && (
-                      <span className={`badge ${badgeClass}`}>{badgeLabel}</span>
-                    )}
-                  </div>
-                )}
-                <div className="product-body">
-                  <span className="product-name">{p.name}</span>
-                  <div className="product-pricing">
-                    {p.sale_price != null && (
-                      <span className="price-sale">${p.sale_price}</span>
-                    )}
-                    {p.original_price != null && p.sale_price != null && (
-                      <span className="price-original">${p.original_price}</span>
-                    )}
-                    {p.original_price != null && p.sale_price == null && (
-                      <span className="price-only">${p.original_price}</span>
-                    )}
-                    {p.discount_pct > 0 && (
-                      <span className="badge badge-discount discount-badge-right">
-                        -{p.discount_pct}%
-                      </span>
-                    )}
-                  </div>
-                  {change && (
-                    <div className="product-change-info">
-                      {change.change_type === 'price_drop' && `Was $${change.old_price} → $${change.new_price}`}
-                      {change.change_type === 'price_increase' && `Was $${change.old_price} → $${change.new_price}`}
-                      {change.change_type === 'new' && 'Recently added'}
-                      {' · '}
-                      {new Date(change.detected_at + 'Z').toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-              </a>
+                product={p}
+                change={changeMap.get(p.name)}
+                hidden={hidden}
+                onToggleHidden={() => (hidden ? unhideItem(key) : hideItem(key))}
+              />
             );
           })}
         </div>
