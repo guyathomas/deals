@@ -88,3 +88,27 @@ describe('diffSnapshots', () => {
     assert.strictEqual(diffSnapshots(old, now).length, 0);
   });
 });
+
+describe('product matching ignores per-render URL params', () => {
+  const base = 'https://www.abercrombie.com/shop/us/p/tee-59408885?categoryId=12204';
+
+  it('matches a product whose grid-position params changed', () => {
+    const old = [{ name: 'Tee', url: `${base}&faceout=model&seq=70&gridProductPosition=1`, salePrice: 20 }];
+    const cur = [{ name: 'Tee', url: `${base}&faceout=prod&seq=3&gridProductPosition=9&afsource=x`, salePrice: 20 }];
+    assert.deepStrictEqual(diffSnapshots(old, cur), []);
+  });
+
+  it('still reports a price drop across changed grid params', () => {
+    const old = [{ name: 'Tee', url: `${base}&seq=70`, salePrice: 20 }];
+    const cur = [{ name: 'Tee', url: `${base}&seq=3`, salePrice: 15 }];
+    const [change] = diffSnapshots(old, cur);
+    assert.strictEqual(change.changeType, 'price_drop');
+  });
+
+  it('keeps colour variants distinct', () => {
+    const old = [{ name: 'Polo', url: '/p/CQ898?colorCode=BL0004', salePrice: 20 }];
+    const cur = [{ name: 'Polo', url: '/p/CQ898?colorCode=HT0488', salePrice: 20 }];
+    const types = diffSnapshots(old, cur).map((c) => c.changeType).sort();
+    assert.deepStrictEqual(types, ['new', 'removed']);
+  });
+});
