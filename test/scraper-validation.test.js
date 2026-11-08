@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { validateNavigationUrl, ALLOWED_HOSTS } = require('../src/scraper');
+const { validateNavigationUrl, ALLOWED_HOSTS, requireProducts } = require('../src/scraper');
 
 describe('validateNavigationUrl', () => {
   it('accepts HTTPS URLs with allowed hosts', () => {
@@ -37,5 +37,16 @@ describe('ALLOWED_HOSTS', () => {
   it('does not contain internal hosts', () => {
     assert.ok(!ALLOWED_HOSTS.has('localhost'));
     assert.ok(!ALLOWED_HOSTS.has('127.0.0.1'));
+  });
+});
+
+describe('requireProducts', () => {
+  it('throws on an empty result so the attempt is retried', () => {
+    assert.throws(() => requireProducts([], 'abercrombie'), /abercrombie: 0 products/);
+  });
+
+  it('passes a non-empty result through', () => {
+    const products = [{ name: 'Tee' }];
+    assert.strictEqual(requireProducts(products, 'abercrombie'), products);
   });
 });

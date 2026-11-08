@@ -1,5 +1,21 @@
+// Params a store re-rolls on every render (grid position, sort sequence,
+// tracking source, image style). Left in, they make one product look removed
+// and re-added between scrapes. Colour/variant params are kept: those are
+// genuinely different items.
+const VOLATILE_URL_PARAMS = ['seq', 'gridProductPosition', 'afsource', 'faceout'];
+
+function stableUrl(url) {
+  if (!url) return '';
+  const [path, query] = url.split('?');
+  if (!query) return url;
+  const params = new URLSearchParams(query);
+  for (const param of VOLATILE_URL_PARAMS) params.delete(param);
+  const rest = params.toString();
+  return rest ? `${path}?${rest}` : path;
+}
+
 function productKey(product) {
-  return `${product.name}|||${product.url || ''}`;
+  return `${product.name}|||${stableUrl(product.url)}`;
 }
 
 function getPrice(product) {

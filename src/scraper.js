@@ -280,6 +280,13 @@ async function createStealthPage(browser) {
   return context.newPage();
 }
 
+// An empty grid usually means the page served a shell without tiles (seen on
+// Abercrombie), not a sold-out sale — throw so the attempt is retried.
+function requireProducts(products, key) {
+  if (products.length === 0) throw new Error(`${key}: 0 products`);
+  return products;
+}
+
 async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
   let lastError;
 
@@ -322,7 +329,7 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
         }
 
         console.log(`  ${siteConfig.key}: ${products.length} products found`);
-        return products;
+        return requireProducts(products, siteConfig.key);
       } catch (err) {
         lastError = err;
         console.error(`  ${siteConfig.key} attempt ${attempt}: ${err.message}`);
@@ -338,6 +345,7 @@ async function scrapeSite(siteConfig, { extractProducts, normalizeProducts }) {
 
 module.exports = {
   scrapeSite,
+  requireProducts,
   validateNavigationUrl,
   ALLOWED_HOSTS,
   loadUntilStable,
