@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiGet } from '../api';
+import useOwner, { siteOwner } from '../hooks/useOwner';
 
 const badgeClassMap = {
   new: 'badge-new',
@@ -24,6 +25,12 @@ export default function Changes() {
   const [siteFilter, setSiteFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [days, setDays] = useState(7);
+  const [sites, setSites] = useState(null);
+  const { owner } = useOwner();
+
+  useEffect(() => {
+    apiGet('/api/sites').then(setSites).catch(console.error);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -37,6 +44,9 @@ export default function Changes() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [siteFilter, typeFilter, days]);
+
+  const ownKeys = sites && new Set(sites.filter((s) => siteOwner(s) === owner).map((s) => s.key));
+  const ownChanges = ownKeys ? changes.filter((c) => ownKeys.has(c.site_key)) : changes;
 
   return (
     <section>
@@ -69,12 +79,12 @@ export default function Changes() {
       </div>
 
       {loading && <Loading />}
-      {!loading && changes.length === 0 && (
+      {!loading && ownChanges.length === 0 && (
         <div className="empty">No changes found.</div>
       )}
-      {!loading && changes.length > 0 && (
+      {!loading && ownChanges.length > 0 && (
         <div className="changes-list">
-          {changes.map((c) => (
+          {ownChanges.map((c) => (
             <article key={c.id} className="card change-row">
               <span className={`badge ${badgeClassMap[c.change_type] || 'badge-removed'}`}>
                 {c.change_type.replace('_', ' ')}

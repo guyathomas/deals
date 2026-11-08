@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useHiddenItems from '../hooks/useHiddenItems';
 import { apiGet } from '../api';
+import useOwner, { siteOwner } from '../hooks/useOwner';
 
 const changeBadgeClass = {
   new: 'badge-new',
@@ -36,6 +37,10 @@ export default function AllStores() {
   const [changeType, setChangeType] = useState('all');
   const [showHidden, setShowHidden] = useState(false);
   const { hideItem, unhideItem, isHidden, hiddenCount } = useHiddenItems();
+  const { owner } = useOwner();
+
+  // A store picked on the other tab isn't in this tab's list.
+  useEffect(() => setFilterSite('all'), [owner]);
 
   useEffect(() => {
     Promise.all([
@@ -60,6 +65,9 @@ export default function AllStores() {
   }
 
   const siteNameMap = new Map(sites.map((s) => [s.key, s.name]));
+  const ownSites = sites.filter((s) => siteOwner(s) === owner);
+  const ownKeys = new Set(ownSites.map((s) => s.key));
+  const ownProducts = products.filter((p) => ownKeys.has(p.site_key));
   const effectivePrice = (p) => p.sale_price ?? p.original_price ?? 0;
 
   const now = Date.now();
@@ -73,7 +81,7 @@ export default function AllStores() {
 
   const itemKey = (p) => `${p.site_key}:${p.url}`;
 
-  const filtered = products.filter((p) => {
+  const filtered = ownProducts.filter((p) => {
     if (!showHidden && isHidden(itemKey(p))) return false;
     if (filterSite !== 'all' && p.site_key !== filterSite) return false;
     const change = changeMap.get(`${p.site_key}:${p.name}`);
@@ -110,12 +118,12 @@ export default function AllStores() {
         <Link to="/" className="back-link" aria-label="Back to overview">&larr;</Link>
         <h1 className="page-title">All stores</h1>
         <span className="page-subtitle">
-          {filtered.length}{filtered.length !== products.length ? ` / ${products.length}` : ''} products
+          {filtered.length}{filtered.length !== ownProducts.length ? ` / ${ownProducts.length}` : ''} products
         </span>
         <div className="page-actions">
           <select value={filterSite} onChange={(e) => setFilterSite(e.target.value)} className="select" aria-label="Filter by store">
             <option value="all">All stores</option>
-            {sites.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
+            {ownSites.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
           </select>
           <select value={changeType} onChange={(e) => setChangeType(e.target.value)} className="select" aria-label="Filter by change type">
             <option value="all">All types</option>

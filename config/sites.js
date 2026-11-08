@@ -1,8 +1,15 @@
 const DEFAULTS = {
   timeout: 30000,
+  // Whose tab the site shows under in the web UI: 'guy' or 'arsh'.
+  owner: 'guy',
 };
 
+const OWNERS = ['guy', 'arsh'];
+
 function defineSite(config) {
+  if (config.owner && !OWNERS.includes(config.owner)) {
+    throw new Error(`Unknown owner "${config.owner}" for site ${config.key}`);
+  }
   return {
     ...DEFAULTS,
     ...config,
@@ -311,6 +318,125 @@ const sites = [
     },
     pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
+  // ── Arsh ──────────────────────────────────────────────────────────────
+  // Sizes: tops XS/S, bottoms 2–4, shoes 8.5–9. Where a store takes size
+  // filters in the URL they're baked in below; where it doesn't (Zara), the
+  // whole sale grid is tracked.
+  //
+  // NOT YET VERIFIED LIVE: these stores sit behind bot checks that block the
+  // sandbox these entries were written in, so the URLs and selectors follow
+  // each store's known platform layout rather than a captured tile. Run
+  // `deals scrape -s <key>` locally once per store; a 0-product result means
+  // the selectors need adjusting against the real markup.
+  //
+  // Abercrombie and J.Crew reuse the men's entries' platforms and selectors.
+  // Unknown size values in an OR'd size facet are ignored by these sites, so
+  // both spellings of the half shoe size are listed.
+  defineSite({
+    key: 'reformation',
+    name: 'Reformation',
+    owner: 'arsh',
+    // Salesforce Commerce Cloud: refinements are prefn/prefv pairs, values
+    // pipe-separated.
+    url: 'https://www.thereformation.com/sale?prefn1=size&prefv1=XS%7CS%7C2%7C4%7C8.5%7C9',
+    selectors: {
+      product: '.product-tile',
+      name: '.product-tile__name',
+      originalPrice: '.price .strike-through .value',
+      salePrice: '.price .sales .value',
+      url: 'a',
+      image: 'img',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
+  defineSite({
+    key: 'abercrombie-womens',
+    name: 'Abercrombie & Fitch (Women)',
+    owner: 'arsh',
+    url: 'https://www.abercrombie.com/shop/us/womens-clearance?facet=sizes%3A%28%22XS%22+%22S%22+%222%22+%224%22+%228.5%22+%228+1%2F2%22+%229%22%29&filtered=true&rows=90&sort=metricorderedunits&start=0',
+    selectors: {
+      product: '.product-grid__products [class*="productCard-module__productCard"]',
+      name: '[data-testid="catalog-product-card-name"]',
+      originalPrice: '.product-price-text[data-variant="original"]',
+      salePrice: '.product-price-text[data-variant="discount"]',
+      url: 'a[data-testid="catalog-product-card-image-link"]',
+      image: '[data-testid="catalog-product-card-image"]',
+    },
+    waitFor: '.product-grid__products',
+    timeout: 45000,
+    pagination: { strategy: 'scroll' },
+  }),
+  // Zara has no size filter in its listing URLs, so this tracks the whole
+  // women's sale grid. The sale category is seasonal; when Zara isn't running
+  // a sale this page redirects and scrapes 0 products.
+  defineSite({
+    key: 'zara',
+    name: 'Zara',
+    owner: 'arsh',
+    url: 'https://www.zara.com/us/en/woman-special-prices-l1314.html',
+    selectors: {
+      product: '.product-grid-product',
+      name: '.product-grid-product-info__name',
+      originalPrice: '.price__amount--old .money-amount__main',
+      salePrice: '.price__amount--on-sale .money-amount__main',
+      url: 'a.product-link',
+      image: 'img',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
+  defineSite({
+    key: 'jcrew-womens',
+    name: 'J.Crew (Women)',
+    owner: 'arsh',
+    url: 'https://www.jcrew.com/sale/women?size=X-SMALL%7CSMALL%7C2%7C4%7C8%201%2F2%20MEDIUM%7C8.5%20MEDIUM%7C9%20MEDIUM',
+    selectors: {
+      product: 'li[class*="ProductTileRevamped__tile___"]',
+      name: '[class*="ProductTileRevamped__tile-name___"]',
+      originalPrice: '.strikethrough-price',
+      salePrice: '[class*="ProductTilePrice__sale-price___"]',
+      url: 'a[class*="ProductTileImage__tile-link___"]',
+      image: 'img[class*="ProductTileImage__tile-image___"]',
+    },
+    timeout: 45000,
+    pagination: { strategy: 'query', param: 'Npge', start: 1, step: 1 },
+  }),
+  // Anthropologie (URBN platform) pages its sale grid with ?page=N.
+  defineSite({
+    key: 'anthropologie',
+    name: 'Anthropologie',
+    owner: 'arsh',
+    url: 'https://www.anthropologie.com/sale-all?size=XS&size=S&size=2&size=4&size=8.5&size=9',
+    selectors: {
+      product: '.o-pwa-product-tile',
+      name: '.o-pwa-product-tile__heading',
+      originalPrice: '.c-pwa-product-price__original',
+      salePrice: '.c-pwa-product-price__current',
+      url: 'a',
+      image: 'img',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
+  }),
+  // Aritzia is Salesforce Commerce Cloud like Reformation. It sells almost no
+  // shoes, so only the clothing sizes are filtered.
+  defineSite({
+    key: 'aritzia',
+    name: 'Aritzia',
+    owner: 'arsh',
+    url: 'https://www.aritzia.com/us/en/sale?prefn1=size&prefv1=XS%7CS%7C2%7C4',
+    selectors: {
+      product: '.product-tile',
+      name: '.product-name',
+      originalPrice: '.price-standard',
+      salePrice: '.price-sales',
+      url: 'a',
+      image: 'img',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'scroll' },
+  }),
 ];
 
-module.exports = { sites };
+module.exports = { sites, OWNERS };

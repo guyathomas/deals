@@ -8,6 +8,7 @@ function siteSummary(site, summary = {}) {
     key: site.key,
     name: site.name,
     url: site.url,
+    owner: site.owner || 'guy',
     lastScrapedAt: summary.scraped_at || null,
     productCount: summary.product_count || 0,
     newCount: summary.new_count || 0,
