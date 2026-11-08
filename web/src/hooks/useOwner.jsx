@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useCallback, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { DEFAULT_OWNER, OWNER_PARAM, resolveOwner, withOwner } from '../lib/owner';
 
 // Whose stores are on screen. Sites carry an `owner` ('guy' | 'arsh'); one
 // exported before owners existed has none and belongs to Guy.
@@ -42,32 +44,46 @@ export const OWNERS = [
 ];
 
 const STORAGE_KEY = 'deals_owner';
-const DEFAULT_OWNER = 'guy';
 
 export const siteOwner = (site) => site.owner || DEFAULT_OWNER;
 
-function load() {
+function loadSaved() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return OWNERS.some((o) => o.key === saved) ? saved : DEFAULT_OWNER;
+    return localStorage.getItem(STORAGE_KEY);
   } catch {
-    return DEFAULT_OWNER;
+    return null;
+  }
+}
+
+function save(owner) {
+  try {
+    localStorage.setItem(STORAGE_KEY, owner);
+  } catch {
+    // Private mode or blocked storage: the choice just won't persist.
   }
 }
 
 const OwnerContext = createContext({ owner: DEFAULT_OWNER, setOwner: () => {}, copy: OWNERS[0].copy });
 
+// Must sit inside the router: the owner is read from and written to `?owner=`.
 export function OwnerProvider({ children }) {
-  const [owner, setOwnerState] = useState(load);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const owner = resolveOwner(location.search, loadSaved());
 
-  const setOwner = useCallback((next) => {
-    setOwnerState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Private mode or blocked storage: the choice just won't persist.
+  const setOwner = useCallback(
+    (next) => navigate({ pathname: location.pathname, search: withOwner(location.search, next) }),
+    [navigate, location.pathname, location.search],
+  );
+
+  // Plain in-app links drop the query string; put the owner back so the
+  // address bar is always shareable, and remember it for bare visits.
+  useEffect(() => {
+    save(owner);
+    if (new URLSearchParams(location.search).get(OWNER_PARAM) !== owner) {
+      navigate({ pathname: location.pathname, search: withOwner(location.search, owner) }, { replace: true });
     }
-  }, []);
+  }, [owner, location.pathname, location.search, navigate]);
 
   // The theme lives on <html> so the page background and native controls
   // follow it too. index.html sets it before React loads to avoid a flash.
