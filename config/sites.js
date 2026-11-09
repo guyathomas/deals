@@ -319,6 +319,25 @@ const sites = [
     },
     pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
   }),
+  // Madewell is a Next.js storefront with CSS-module classes, so selectors match
+  // the stable prefix before the per-build hash. A recommendations carousel
+  // below the grid reuses the same tile markup (at full price), so the product
+  // root is the grid's <li>. The grid pages 48 at a time via ?offset=N.
+  defineSite({
+    key: 'madewell',
+    name: 'Madewell',
+    url: 'https://www.madewell.com/sale/mens/',
+    selectors: {
+      product: 'li[class*="ProductsGrid_plpGridElement__"]',
+      name: '[class*="ProductTile_productTileName__"]',
+      originalPrice: '[class*="PriceTile_productTileListPrice__"]',
+      salePrice: '[class*="PriceTile_productTileSalePrice__"]',
+      url: 'a[class*="ProductTile_productTileImgLink__"]',
+      image: 'img[class*="ProductTile_productTileImg__"]',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'query', param: 'offset', start: 0, step: 48 },
+  }),
   // ── Arsh ──────────────────────────────────────────────────────────────
   // Sizes: tops XS/S, bottoms 2–4, shoes 8.5–9. Where a store takes size
   // filters in the URL they're baked in below; where it doesn't (Zara), the

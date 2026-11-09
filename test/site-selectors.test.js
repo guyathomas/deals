@@ -69,4 +69,17 @@ describe('site selectors against live-markup fixtures', () => {
       assert.match(products[0].imageUrl, /^https:\/\/cdn\.shopify\.com\//);
     });
   }
+
+  it('madewell: grid tiles only, not the recommendations carousel', () => {
+    const products = extractFromFixture('madewell.html', 'madewell');
+    assert.deepStrictEqual(prices(products), [
+      ['The McCarren Field Hoodie', 118, 89.99],
+      ['Crewneck Sweater in Textured Cotton', 118, 39.99],
+    ]);
+    assert.strictEqual(
+      products[0].url,
+      'https://www.madewell.com/p/mens/clothing/hoodies-sweatshirts/the-mccarren-field-hoodie/OB029/',
+    );
+    assert.strictEqual(products[0].imageUrl, 'https://www.madewell.com/images/OB029_GR0578_m');
+  });
 });
