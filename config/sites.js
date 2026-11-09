@@ -323,10 +323,12 @@ const sites = [
   // the stable prefix before the per-build hash. A recommendations carousel
   // below the grid reuses the same tile markup (at full price), so the product
   // root is the grid's <li>. The grid pages 48 at a time via ?offset=N.
+  // Sizes are one comma-separated r_size param; a size the grid doesn't
+  // offer is ignored.
   defineSite({
     key: 'madewell',
     name: 'Madewell',
-    url: 'https://www.madewell.com/sale/mens/',
+    url: 'https://www.madewell.com/sale/mens/?r_size=M%2C33%2C33%2F32%2C11%2COne%20Size',
     selectors: {
       product: 'li[class*="ProductsGrid_plpGridElement__"]',
       name: '[class*="ProductTile_productTileName__"]',
