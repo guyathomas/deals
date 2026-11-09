@@ -4,11 +4,9 @@ import { DEFAULT_OWNER, OWNER_PARAM, resolveOwner, withOwner } from '../lib/owne
 
 // Whose stores are on screen. Sites carry an `owner` ('guy' | 'arsh'); one
 // exported before owners existed has none and belongs to Guy.
-// Each owner picks the look of the app — Guy a classic dark mode, Arsh
-// Gryffindor scarlet and gold — but the words stay the same. Only the brand
-// mark glyph differs, as part of each theme's crest.
 const COPY = {
   brand: 'Deals',
+  brandMark: '◆',
   tagline: 'Price tracker',
   nav: { overview: 'Overview', all: 'All Stores', changes: 'Changes' },
   overviewTitle: 'Your stores',
@@ -21,16 +19,13 @@ const COPY = {
 };
 
 export const OWNERS = [
-  { key: 'guy', label: 'Guy', brandMark: '◆' },
-  { key: 'arsh', label: 'Arsh', brandMark: 'G' },
+  { key: 'guy', label: 'Guy' },
+  { key: 'arsh', label: 'Arsh' },
 ];
 
 export const siteOwner = (site) => site.owner || DEFAULT_OWNER;
 
-const COPY_BY_OWNER = Object.fromEntries(OWNERS.map((o) => [o.key, { ...COPY, brandMark: o.brandMark }]));
-const copyFor = (owner) => COPY_BY_OWNER[owner] || COPY_BY_OWNER[DEFAULT_OWNER];
-
-const OwnerContext = createContext({ owner: DEFAULT_OWNER, setOwner: () => {}, copy: copyFor(DEFAULT_OWNER) });
+const OwnerContext = createContext({ owner: DEFAULT_OWNER, setOwner: () => {}, copy: COPY });
 
 // Must sit inside the router: the owner is read from and written to `?owner=`.
 export function OwnerProvider({ children }) {
@@ -53,15 +48,7 @@ export function OwnerProvider({ children }) {
     }
   }, [owner, location.pathname, location.search, navigate]);
 
-  // The theme lives on <html> so the page background and native controls
-  // follow it too. index.html sets it before React loads to avoid a flash.
-  useEffect(() => {
-    document.documentElement.dataset.theme = owner;
-  }, [owner]);
-
-  const copy = copyFor(owner);
-
-  return <OwnerContext.Provider value={{ owner, setOwner, copy }}>{children}</OwnerContext.Provider>;
+  return <OwnerContext.Provider value={{ owner, setOwner, copy: COPY }}>{children}</OwnerContext.Provider>;
 }
 
 export default function useOwner() {
