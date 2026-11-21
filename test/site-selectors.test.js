@@ -82,4 +82,17 @@ describe('site selectors against live-markup fixtures', () => {
     );
     assert.strictEqual(products[0].imageUrl, 'https://www.madewell.com/images/OB029_GR0578_m');
   });
+
+  it('industrie: product tiles only, not inline promo banners', () => {
+    const products = extractFromFixture('industrie.html', 'industrie');
+    assert.deepStrictEqual(prices(products), [
+      ['The Vincenzo Short Sleeve Shirt', 69.95, 48.95],
+      ['The Del Sur Tee', 34.95, null],
+    ]);
+    assert.strictEqual(
+      products[0].url,
+      'https://www.industrie.com.au/collections/sale/products/mls42380ss-taupe-aqua',
+    );
+    assert.match(products[0].imageUrl, /^https:\/\/cdn\.shopify\.com\/.*MLS42380SS-TAUPEAQUA-01/);
+  });
 });

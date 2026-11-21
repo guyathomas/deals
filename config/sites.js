@@ -343,6 +343,28 @@ const sites = [
     timeout: 60000,
     pagination: { strategy: 'query', param: 'offset', start: 0, step: 48 },
   }),
+  // Industrie is an Australian menswear-only Shopify store, so its prices are
+  // AUD. The grid is rendered client-side by Athos Commerce (Searchspring's
+  // SNAP UI) into #athos-content; the store's own collection markup is empty.
+  // Size filters live in the hash as /filter:ss_instock_sizes:<size> segments
+  // (in-stock sizes only), and the grid pages ~27 at a time via ?page=N with
+  // the hash kept. Bottoms come in even waists only, so 33 is covered by 32
+  // and 34. Inline promo banners share the .ss__result class, hence --item.
+  defineSite({
+    key: 'industrie',
+    name: 'Industrie',
+    url: 'https://www.industrie.com.au/collections/sale#/filter:ss_instock_sizes:M/filter:ss_instock_sizes:32/filter:ss_instock_sizes:34',
+    selectors: {
+      product: 'article.ss__result--item',
+      name: '.product-card__title',
+      originalPrice: '.price-item--regular',
+      salePrice: '.price-item--sale',
+      url: 'a.product-card__title',
+      image: 'img.ss__image',
+    },
+    timeout: 60000,
+    pagination: { strategy: 'query', param: 'page', start: 1, step: 1 },
+  }),
   // ── Arsh ──────────────────────────────────────────────────────────────
   // Sizes: tops XS/S, bottoms 2–4, shoes 8.5–9. Where a store takes size
   // filters in the URL they're baked in below; where it doesn't (Zara), the
