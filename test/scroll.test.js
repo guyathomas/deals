@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { scrollOffsets } = require('../src/scraper');
+const { scrollOffsets, rewindFrom } = require('../src/scraper');
 
 describe('scrollOffsets', () => {
   it('steps through the page in viewport-sized increments', () => {
@@ -30,5 +30,23 @@ describe('scrollOffsets', () => {
 
   it('never emits a negative offset for a bogus scroll position', () => {
     assert.ok(scrollOffsets(3000, 1000, -500).every((y) => y >= 0));
+  });
+});
+
+describe('rewindFrom', () => {
+  it('backs off two viewports so a sentinel already scrolled past re-enters view', () => {
+    // Parked at the bottom (Banana Republic): without moving up, the next walk is a
+    // no-op scrollTo(bottom) and the infinite-scroll observer never fires again.
+    assert.strictEqual(rewindFrom(19438, 1080), 17278);
+  });
+
+  it('never rewinds above the top of the page', () => {
+    assert.strictEqual(rewindFrom(500, 1080), 0);
+  });
+
+  it('gives a walk that moves even when parked at the bottom', () => {
+    const offsets = scrollOffsets(20518, 1080, rewindFrom(19438, 1080));
+    assert.ok(offsets.length > 1);
+    assert.strictEqual(offsets[offsets.length - 1], 20518);
   });
 });
