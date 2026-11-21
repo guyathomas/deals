@@ -82,6 +82,7 @@ async function loadUntilStable(page, siteConfig, step, opts = {}) {
 const SCROLL_STEP_RATIO = 0.8;
 const SCROLL_SETTLE_MS = 250;
 const MAX_SCROLL_STEPS = 200;
+const REWIND_VIEWPORTS = 2;
 
 // Inline styles marketing/consent modals pin onto <html>/<body> to lock scrolling.
 const SCROLL_LOCK_PROPS = ['overflow', 'overflow-y', 'position', 'height', 'inset', 'top'];
@@ -98,6 +99,15 @@ function scrollOffsets(scrollHeight, innerHeight, from = 0, maxSteps = MAX_SCROL
   }
   offsets.push(scrollHeight);
   return offsets;
+}
+
+// Where to restart a walk from. A round that starts parked at the bottom would
+// only re-issue scrollTo(bottom) — no movement, so an IntersectionObserver
+// sentinel near the end of the grid never fires again (Banana Republic stalled
+// at its first 30 tiles this way). Backing off a couple of viewports lets the
+// walk scroll the sentinel back into view.
+function rewindFrom(scrollY, innerHeight) {
+  return Math.max(0, scrollY - innerHeight * REWIND_VIEWPORTS);
 }
 
 // Marketing/consent modals (Attentive email capture, OneTrust cookie banners) lock
@@ -124,7 +134,11 @@ async function scrollThroughViewport(page) {
     window.scrollY,
   ]);
 
-  const offsets = scrollOffsets(scrollHeight, innerHeight, scrollY);
+  const start = rewindFrom(scrollY, innerHeight);
+  await page.evaluate((to) => window.scrollTo(0, to), start);
+  await sleep(SCROLL_SETTLE_MS);
+
+  const offsets = scrollOffsets(scrollHeight, innerHeight, start);
   // Capping drops straight to the bottom, silently reintroducing the skipped-row
   // bug this walk exists to fix — say so rather than quietly losing images.
   if (offsets.length > MAX_SCROLL_STEPS) {
@@ -352,4 +366,5 @@ module.exports = {
   accumulatePages,
   buildPageUrl,
   scrollOffsets,
+  rewindFrom,
 };
